@@ -78,8 +78,9 @@ public class ExportarExcel {
             }
             return true;
 
-        } catch (IOException e) {
+        } catch (IOException | RuntimeException | LinkageError e) {
             System.err.println("Error al exportar productos más vendidos: " + e.getMessage());
+            e.printStackTrace();
             return false;
         }
     }
@@ -137,8 +138,9 @@ public class ExportarExcel {
             }
             return true;
 
-        } catch (IOException e) {
+        } catch (IOException | RuntimeException | LinkageError e) {
             System.err.println("Error al exportar métodos de pago: " + e.getMessage());
+            e.printStackTrace();
             return false;
         }
     }
