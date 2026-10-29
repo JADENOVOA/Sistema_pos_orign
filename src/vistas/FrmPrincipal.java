@@ -106,6 +106,7 @@ public class FrmPrincipal extends javax.swing.JFrame {
         setMinimumSize(new Dimension(1024, 600));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
         setLayout(new BorderLayout());
 
         add(crearCabecera(), BorderLayout.NORTH);
