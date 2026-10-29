@@ -84,8 +84,16 @@ public class PnlNuevaVenta extends JPanel {
         // 2. COLUMNA DERECHA: Carrito en Curso y Caja de Cobro
         add(crearPanelCarritoDerecho(), BorderLayout.EAST);
 
-        // Cargar productos de PostgreSQL a la tabla
+        
         cargarProductosEnTabla();
+
+    
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentShown(java.awt.event.ComponentEvent e) {
+                refrescarProductos();
+            }
+        });
     }
 
     // =========================================================================
@@ -233,7 +241,7 @@ public class PnlNuevaVenta extends JPanel {
             }
         });
 
-        // UN SOLO CLIC EN LA FILA O EN "+ AGREGAR" AGREGA AL CARRITO INMEDIATAMENTE
+     
         tblCatalogo.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -260,9 +268,6 @@ public class PnlNuevaVenta extends JPanel {
         return pnl;
     }
 
-    // =========================================================================
-    // 2. PANEL DERECHO: CARRITO EN CURSO Y COBRO
-    // =========================================================================
     private JPanel crearPanelCarritoDerecho() {
         JPanel pnl = new JPanel(new BorderLayout(0, 10));
         pnl.setPreferredSize(new Dimension(390, 600));
@@ -472,6 +477,14 @@ public class PnlNuevaVenta extends JPanel {
                 "+ AGREGAR"
             });
         }
+    }
+
+    /**
+     * Vuelve a consultar los productos en PostgreSQL y actualiza el catálogo.
+     * Este método también puede llamarse desde el menú principal al abrir Nueva Venta.
+     */
+    public void refrescarProductos() {
+        cargarProductosEnTabla();
     }
 
     private void agregarProductoSeleccionado() {
