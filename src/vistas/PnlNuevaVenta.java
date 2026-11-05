@@ -84,6 +84,8 @@ public class PnlNuevaVenta extends JPanel {
 
         cargarProductosEnTabla();
 
+        cargarProductosEnTabla();
+
         addComponentListener(new java.awt.event.ComponentAdapter() {
             @Override
             public void componentShown(java.awt.event.ComponentEvent e) {
@@ -275,6 +277,7 @@ public class PnlNuevaVenta extends JPanel {
             }
         });
 
+     
         tblCatalogo.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -310,9 +313,7 @@ public class PnlNuevaVenta extends JPanel {
         return pnl;
     }
 
-    // =========================================================
-    // PANEL DERECHO: CARRITO Y COBRO
-    // =========================================================
+   
 
     private JPanel crearPanelCarritoDerecho() {
 
@@ -321,8 +322,7 @@ public class PnlNuevaVenta extends JPanel {
         pnl.setBackground(Color.WHITE);
         pnl.setBorder(new CompoundBorder(
                 new LineBorder(COLOR_BORDE, 1, true),
-                new EmptyBorder(14, 14, 14, 14)
-        ));
+                new EmptyBorder(14, 14, 14, 14)));
 
         JPanel pnlHeaderCarrito = new JPanel(new BorderLayout());
         pnlHeaderCarrito.setBackground(Color.WHITE);
@@ -336,8 +336,7 @@ public class PnlNuevaVenta extends JPanel {
         lblItemsCount.setForeground(COLOR_VERDE);
 
         JPanel pnlTitYCont = new JPanel(
-                new FlowLayout(FlowLayout.LEFT, 6, 0)
-        );
+                new FlowLayout(FlowLayout.LEFT, 6, 0));
 
         pnlTitYCont.setBackground(Color.WHITE);
         pnlTitYCont.add(lblTit);
@@ -375,7 +374,7 @@ public class PnlNuevaVenta extends JPanel {
         pnl.add(pnlTopCarrito, BorderLayout.NORTH);
 
         String[] colCarrito = {
-            "Producto", "Cant.", "P.Unit", "Subtotal"
+                "Producto", "Cant.", "P.Unit", "Subtotal"
         };
 
         modCarrito = new DefaultTableModel(colCarrito, 0) {
@@ -421,15 +420,13 @@ public class PnlNuevaVenta extends JPanel {
 
         JPanel pnlInferior = new JPanel();
         pnlInferior.setLayout(new BoxLayout(
-                pnlInferior, BoxLayout.Y_AXIS
-        ));
+                pnlInferior, BoxLayout.Y_AXIS));
 
         pnlInferior.setBackground(Color.WHITE);
         pnlInferior.setBorder(new EmptyBorder(10, 0, 0, 0));
 
         lblSubtotal = new JLabel(
-                "Op. Gravada / Subtotal: S/. 0.00"
-        );
+                "Op. Gravada / Subtotal: S/. 0.00");
 
         lblSubtotal.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         lblSubtotal.setForeground(new Color(71, 85, 105));
@@ -461,16 +458,13 @@ public class PnlNuevaVenta extends JPanel {
 
         btnEfectivo = crearBotonCustomToggle("Efectivo", true);
         btnBilletera = crearBotonCustomToggle(
-                "Billetera Digital", false
-        );
+                "Billetera Digital", false);
 
         btnEfectivo.addActionListener(
-                e -> seleccionarMetodoPago("Efectivo")
-        );
+                e -> seleccionarMetodoPago("Efectivo"));
 
         btnBilletera.addActionListener(
-                e -> seleccionarMetodoPago("Billetera Digital")
-        );
+                e -> seleccionarMetodoPago("Billetera Digital"));
 
         pnlMetodos.add(btnEfectivo);
         pnlMetodos.add(btnBilletera);
@@ -487,29 +481,27 @@ public class PnlNuevaVenta extends JPanel {
 
         pnlRec.add(
                 new JLabel("Monto Recibido (S/.)"),
-                BorderLayout.NORTH
-        );
+                BorderLayout.NORTH);
 
         txtMontoRecibido = new JTextField();
         txtMontoRecibido.setFont(
-                new Font("Segoe UI", Font.BOLD, 15)
-        );
+                new Font("Segoe UI", Font.BOLD, 15));
 
         txtMontoRecibido.getDocument().addDocumentListener(
                 new DocumentListener() {
 
-            public void insertUpdate(DocumentEvent e) {
-                calcularVuelto();
-            }
+                    public void insertUpdate(DocumentEvent e) {
+                        calcularVuelto();
+                    }
 
-            public void removeUpdate(DocumentEvent e) {
-                calcularVuelto();
-            }
+                    public void removeUpdate(DocumentEvent e) {
+                        calcularVuelto();
+                    }
 
-            public void changedUpdate(DocumentEvent e) {
-                calcularVuelto();
-            }
-        });
+                    public void changedUpdate(DocumentEvent e) {
+                        calcularVuelto();
+                    }
+                });
 
         pnlRec.add(txtMontoRecibido, BorderLayout.CENTER);
 
@@ -533,24 +525,19 @@ public class PnlNuevaVenta extends JPanel {
         btnRegistrarVenta = crearBotonSolido(
                 "REGISTRAR VENTA (F12)",
                 COLOR_VERDE_OSCURO,
-                Color.WHITE
-        );
+                Color.WHITE);
 
         btnRegistrarVenta.setFont(
-                new Font("Segoe UI", Font.BOLD, 14)
-        );
+                new Font("Segoe UI", Font.BOLD, 14));
 
         btnRegistrarVenta.setMaximumSize(
-                new Dimension(360, 44)
-        );
+                new Dimension(360, 44));
 
         btnRegistrarVenta.setPreferredSize(
-                new Dimension(360, 44)
-        );
+                new Dimension(360, 44));
 
         btnRegistrarVenta.addActionListener(
-                e -> procesarCobroVenta()
-        );
+                e -> procesarCobroVenta());
 
         pnlInferior.add(btnRegistrarVenta);
 
@@ -570,16 +557,18 @@ public class PnlNuevaVenta extends JPanel {
 
         for (Producto p : listaProductosMemoria) {
 
-            modCatalogo.addRow(new Object[]{
-                p.getIdProducto(),
-                p.getNombre(),
-                p.getCategoriaNombre(),
-                p.getStock() + " " + p.getUnidadMedida(),
-                String.format("%.2f", p.getPrecioVenta()),
-                "+ AGREGAR"
+            modCatalogo.addRow(new Object[] {
+                    p.getIdProducto(),
+                    p.getNombre(),
+                    p.getCategoriaNombre(),
+                    p.getStock() + " " + p.getUnidadMedida(),
+                    String.format("%.2f", p.getPrecioVenta()),
+                    "+ AGREGAR"
             });
         }
     }
+
+  
 
     public void refrescarProductos() {
         cargarProductosEnTabla();
@@ -596,15 +585,13 @@ public class PnlNuevaVenta extends JPanel {
         int filaModelo = tblCatalogo.convertRowIndexToModel(filaVista);
 
         int idProducto = Integer.parseInt(
-                modCatalogo.getValueAt(filaModelo, 0).toString()
-        );
+                modCatalogo.getValueAt(filaModelo, 0).toString());
 
         String nombre = modCatalogo.getValueAt(filaModelo, 1).toString();
 
         double precio = Double.parseDouble(
                 modCatalogo.getValueAt(filaModelo, 4)
-                        .toString().replace(",", ".")
-        );
+                        .toString().replace(",", "."));
 
         boolean existe = false;
 
@@ -615,8 +602,7 @@ public class PnlNuevaVenta extends JPanel {
             if (nomEnCarrito.equals(nombre)) {
 
                 int cantActual = Integer.parseInt(
-                        modCarrito.getValueAt(i, 1).toString()
-                );
+                        modCarrito.getValueAt(i, 1).toString());
 
                 int nuevaCant = cantActual + 1;
 
@@ -624,8 +610,7 @@ public class PnlNuevaVenta extends JPanel {
 
                 modCarrito.setValueAt(
                         String.format("%.2f", nuevaCant * precio),
-                        i, 3
-                );
+                        i, 3);
 
                 existe = true;
                 break;
@@ -634,11 +619,11 @@ public class PnlNuevaVenta extends JPanel {
 
         if (!existe) {
 
-            modCarrito.addRow(new Object[]{
-                nombre,
-                1,
-                String.format("%.2f", precio),
-                String.format("%.2f", precio)
+            modCarrito.addRow(new Object[] {
+                    nombre,
+                    1,
+                    String.format("%.2f", precio),
+                    String.format("%.2f", precio)
             });
         }
 
@@ -654,12 +639,10 @@ public class PnlNuevaVenta extends JPanel {
 
             double sub = Double.parseDouble(
                     modCarrito.getValueAt(i, 3)
-                            .toString().replace(",", ".")
-            );
+                            .toString().replace(",", "."));
 
             int cant = Integer.parseInt(
-                    modCarrito.getValueAt(i, 1).toString()
-            );
+                    modCarrito.getValueAt(i, 1).toString());
 
             total += sub;
             totalItems += cant;
@@ -673,23 +656,19 @@ public class PnlNuevaVenta extends JPanel {
 
         lblSubtotal.setText(String.format(
                 "Op. Gravada / Subtotal: S/. %.2f",
-                subtotalCalculado
-        ));
+                subtotalCalculado));
 
         lblIgv.setText(String.format(
                 "I.G.V. (18%%): S/. %.2f",
-                igvCalculado
-        ));
+                igvCalculado));
 
         lblTotal.setText(String.format(
                 "TOTAL A COBRAR: S/. %.2f",
-                totalCalculado
-        ));
+                totalCalculado));
 
         if ("Billetera Digital".equals(metodoPagoSeleccionado)) {
             txtMontoRecibido.setText(
-                    String.format("%.2f", totalCalculado)
-            );
+                    String.format("%.2f", totalCalculado));
         }
 
         calcularVuelto();
@@ -700,8 +679,7 @@ public class PnlNuevaVenta extends JPanel {
     // =========================================================
 
     private JButton crearBotonCustomToggle(
-            String texto, boolean activo
-    ) {
+            String texto, boolean activo) {
 
         JButton btn = new JButton(texto) {
 
@@ -712,14 +690,12 @@ public class PnlNuevaVenta extends JPanel {
 
                 g2.setRenderingHint(
                         RenderingHints.KEY_ANTIALIASING,
-                        RenderingHints.VALUE_ANTIALIAS_ON
-                );
+                        RenderingHints.VALUE_ANTIALIAS_ON);
 
                 g2.setColor(getBackground());
 
                 g2.fillRoundRect(
-                        0, 0, getWidth(), getHeight(), 8, 8
-                );
+                        0, 0, getWidth(), getHeight(), 8, 8);
 
                 g2.dispose();
 
@@ -739,8 +715,7 @@ public class PnlNuevaVenta extends JPanel {
             btn.setForeground(Color.WHITE);
 
             btn.setBorder(new LineBorder(
-                    COLOR_VERDE_OSCURO, 1, true
-            ));
+                    COLOR_VERDE_OSCURO, 1, true));
 
         } else {
 
@@ -748,8 +723,7 @@ public class PnlNuevaVenta extends JPanel {
             btn.setForeground(new Color(51, 65, 85));
 
             btn.setBorder(new LineBorder(
-                    new Color(203, 213, 225), 1, true
-            ));
+                    new Color(203, 213, 225), 1, true));
         }
 
         return btn;
@@ -781,8 +755,7 @@ public class PnlNuevaVenta extends JPanel {
             btnEfectivo.setForeground(new Color(51, 65, 85));
 
             txtMontoRecibido.setText(
-                    String.format("%.2f", totalCalculado)
-            );
+                    String.format("%.2f", totalCalculado));
 
             txtMontoRecibido.setEnabled(false);
             lblVuelto.setText("S/. 0.00");
@@ -814,16 +787,14 @@ public class PnlNuevaVenta extends JPanel {
             if (vuelto >= 0) {
 
                 lblVuelto.setText(String.format(
-                        "S/. %.2f", vuelto
-                ));
+                        "S/. %.2f", vuelto));
 
                 lblVuelto.setForeground(COLOR_VERDE_OSCURO);
 
             } else {
 
                 lblVuelto.setText(String.format(
-                        "- S/. %.2f", Math.abs(vuelto)
-                ));
+                        "- S/. %.2f", Math.abs(vuelto)));
 
                 lblVuelto.setForeground(new Color(220, 38, 38));
             }
@@ -856,8 +827,7 @@ public class PnlNuevaVenta extends JPanel {
                     this,
                     "El carrito de compras está vacío.",
                     "Aviso",
-                    JOptionPane.WARNING_MESSAGE
-            );
+                    JOptionPane.WARNING_MESSAGE);
 
             return;
         }
@@ -869,8 +839,7 @@ public class PnlNuevaVenta extends JPanel {
 
             recibido = Double.parseDouble(
                     txtMontoRecibido.getText()
-                            .trim().replace(",", ".")
-            );
+                            .trim().replace(",", "."));
 
             if (recibido < totalCalculado) {
 
@@ -878,8 +847,7 @@ public class PnlNuevaVenta extends JPanel {
                         this,
                         "El monto recibido es menor al total a pagar.",
                         "Pago Insuficiente",
-                        JOptionPane.WARNING_MESSAGE
-                );
+                        JOptionPane.WARNING_MESSAGE);
 
                 return;
             }
@@ -892,8 +860,7 @@ public class PnlNuevaVenta extends JPanel {
                     this,
                     "Ingrese el monto recibido en efectivo.",
                     "Aviso",
-                    JOptionPane.WARNING_MESSAGE
-            );
+                    JOptionPane.WARNING_MESSAGE);
 
             return;
         }
@@ -906,25 +873,21 @@ public class PnlNuevaVenta extends JPanel {
 
         Venta v = new Venta();
 
-        String ticket = "TKT-" + (
-                System.currentTimeMillis() % 1000000
-        );
+        String ticket = "TKT-" + (System.currentTimeMillis() % 1000000);
 
         v.setNumeroTicket(ticket);
 
         Caja cajaActual = cajaDAO.buscarCajaAbierta(
-                usuario.getIdUsuario()
-        );
+                usuario.getIdUsuario());
 
         if (cajaActual == null) {
 
             JOptionPane.showMessageDialog(
                     this,
                     "No hay una caja abierta.\n"
-                    + "Abra una caja antes de registrar ventas.",
+                            + "Abra una caja antes de registrar ventas.",
                     "Caja cerrada",
-                    JOptionPane.WARNING_MESSAGE
-            );
+                    JOptionPane.WARNING_MESSAGE);
 
             return;
         }
@@ -959,18 +922,15 @@ public class PnlNuevaVenta extends JPanel {
             d.setProductoNombre(nombreProd);
 
             d.setCantidad(Integer.parseInt(
-                    modCarrito.getValueAt(i, 1).toString()
-            ));
+                    modCarrito.getValueAt(i, 1).toString()));
 
             d.setPrecioUnitario(Double.parseDouble(
                     modCarrito.getValueAt(i, 2)
-                            .toString().replace(",", ".")
-            ));
+                            .toString().replace(",", ".")));
 
             d.setSubtotal(Double.parseDouble(
                     modCarrito.getValueAt(i, 3)
-                            .toString().replace(",", ".")
-            ));
+                            .toString().replace(",", ".")));
 
             lista.add(d);
         }
@@ -998,8 +958,7 @@ public class PnlNuevaVenta extends JPanel {
                     this,
                     "Error al registrar la venta en PostgreSQL.",
                     "Error",
-                    JOptionPane.ERROR_MESSAGE
-            );
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -1020,12 +979,11 @@ public class PnlNuevaVenta extends JPanel {
 
         sb.append("Fecha:    ").append(
                 new SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
-                        .format(new Date())
-        ).append("\n");
+                        .format(new Date()))
+                .append("\n");
 
         sb.append("Cajero:   ").append(
-                usuario.getNombreCompleto()
-        ).append("\n");
+                usuario.getNombreCompleto()).append("\n");
 
         sb.append("Cliente:  ").append(v.getCliente()).append("\n");
 
@@ -1033,8 +991,7 @@ public class PnlNuevaVenta extends JPanel {
 
         sb.append(String.format(
                 "%-18s %4s %8s\n",
-                "PRODUCTO", "CANT", "SUBTOTAL"
-        ));
+                "PRODUCTO", "CANT", "SUBTOTAL"));
 
         sb.append("-----------------------------------------\n");
 
@@ -1050,31 +1007,26 @@ public class PnlNuevaVenta extends JPanel {
                     "%-18s %4d  S/.%6.2f\n",
                     nom,
                     d.getCantidad(),
-                    d.getSubtotal()
-            ));
+                    d.getSubtotal()));
         }
 
         sb.append("-----------------------------------------\n");
 
         sb.append(String.format(
                 "TOTAL A PAGAR:        S/. %8.2f\n",
-                v.getTotal()
-        ));
+                v.getTotal()));
 
         sb.append(String.format(
                 "Método de Pago:       %s\n",
-                v.getMetodoPago()
-        ));
+                v.getMetodoPago()));
 
         sb.append(String.format(
                 "Monto Recibido:       S/. %8.2f\n",
-                v.getMontoRecibido()
-        ));
+                v.getMontoRecibido()));
 
         sb.append(String.format(
                 "VUELTO:               S/. %8.2f\n",
-                v.getVuelto()
-        ));
+                v.getVuelto()));
 
         sb.append("=========================================\n");
         sb.append("       ¡GRACIAS POR SU COMPRA!           \n");
@@ -1085,8 +1037,7 @@ public class PnlNuevaVenta extends JPanel {
         // ABRIR VENTANA DE VISTA PREVIA
         VistaPreviaTicket vista = new VistaPreviaTicket(
                 SwingUtilities.getWindowAncestor(this),
-                area.getText()
-        );
+                area.getText());
 
         vista.setVisible(true);
     }
@@ -1096,8 +1047,7 @@ public class PnlNuevaVenta extends JPanel {
     // =========================================================
 
     private JButton crearBotonSolido(
-            String texto, Color fondo, Color textoColor
-    ) {
+            String texto, Color fondo, Color textoColor) {
 
         JButton btn = new JButton(texto) {
 
@@ -1108,14 +1058,12 @@ public class PnlNuevaVenta extends JPanel {
 
                 g2.setRenderingHint(
                         RenderingHints.KEY_ANTIALIASING,
-                        RenderingHints.VALUE_ANTIALIAS_ON
-                );
+                        RenderingHints.VALUE_ANTIALIAS_ON);
 
                 g2.setColor(getBackground());
 
                 g2.fillRoundRect(
-                        0, 0, getWidth(), getHeight(), 6, 6
-                );
+                        0, 0, getWidth(), getHeight(), 6, 6);
 
                 g2.dispose();
 
@@ -1132,8 +1080,7 @@ public class PnlNuevaVenta extends JPanel {
 
         btn.setBorder(new CompoundBorder(
                 new LineBorder(fondo.darker(), 1, true),
-                new EmptyBorder(7, 14, 7, 14)
-        ));
+                new EmptyBorder(7, 14, 7, 14)));
 
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
 

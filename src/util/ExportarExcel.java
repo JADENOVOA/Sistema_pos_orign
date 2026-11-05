@@ -9,6 +9,7 @@ import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.PageMargin;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
@@ -17,17 +18,11 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class ExportarExcel {
-
-    private static final String VERDE_OSCURO = "176B43";
-    private static final String VERDE_CLARO = "E8F3EC";
-    private static final String VERDE_TOTAL = "D5E9DC";
-    private static final String GRIS_BORDE = "D9E2DC";
 
     // ============================================================
     // PRODUCTOS MAS VENDIDOS
@@ -85,7 +80,7 @@ public class ExportarExcel {
 
             sheet.addMergedRegion(new CellRangeAddress(2, 2, 0, 3));
 
-            // Fecha de generacion
+            // Fecha de generación
             Row filaFecha = sheet.createRow(3);
             Cell celdaFecha = filaFecha.createCell(0);
 
@@ -145,22 +140,34 @@ public class ExportarExcel {
             textoTotal.setCellStyle(totalTextoStyle);
 
             Cell cantidadTotal = filaTotal.createCell(2);
-            cantidadTotal.setCellFormula(
-                "SUM(C7:C" + (ultimaFilaDatos + 1) + ")"
-            );
+
+            if (ultimaFilaDatos >= 6) {
+                cantidadTotal.setCellFormula(
+                    "SUM(C7:C" + (ultimaFilaDatos + 1) + ")"
+                );
+            } else {
+                cantidadTotal.setCellValue(0);
+            }
+
             cantidadTotal.setCellStyle(totalNumeroStyle);
 
             Cell recaudacionTotal = filaTotal.createCell(3);
-            recaudacionTotal.setCellFormula(
-                "SUM(D7:D" + (ultimaFilaDatos + 1) + ")"
-            );
+
+            if (ultimaFilaDatos >= 6) {
+                recaudacionTotal.setCellFormula(
+                    "SUM(D7:D" + (ultimaFilaDatos + 1) + ")"
+                );
+            } else {
+                recaudacionTotal.setCellValue(0);
+            }
+
             recaudacionTotal.setCellStyle(totalMonedaStyle);
 
             sheet.addMergedRegion(
                 new CellRangeAddress(rowNum, rowNum, 0, 1)
             );
 
-            // Configuracion de hoja
+            // Configuración de hoja
             configurarHoja(sheet, 4, 3, 5, rowNum);
 
             // Anchos de columnas
@@ -169,10 +176,9 @@ public class ExportarExcel {
             sheet.setColumnWidth(2, 5500);
             sheet.setColumnWidth(3, 7000);
 
-            // Calculo automatico de formulas
             workbook.setForceFormulaRecalculation(true);
 
-            // Guardar
+            // Guardar archivo
             try (FileOutputStream fileOut = new FileOutputStream(rutaArchivo)) {
                 workbook.write(fileOut);
             }
@@ -243,7 +249,7 @@ public class ExportarExcel {
 
             sheet.addMergedRegion(new CellRangeAddress(2, 2, 0, 2));
 
-            // Fecha de generacion
+            // Fecha de generación
             Row filaFecha = sheet.createRow(3);
             Cell celdaFecha = filaFecha.createCell(0);
 
@@ -298,22 +304,34 @@ public class ExportarExcel {
             textoTotal.setCellStyle(totalTextoStyle);
 
             Cell cantidadTotal = filaTotal.createCell(1);
-            cantidadTotal.setCellFormula(
-                "SUM(B7:B" + (ultimaFilaDatos + 1) + ")"
-            );
+
+            if (ultimaFilaDatos >= 6) {
+                cantidadTotal.setCellFormula(
+                    "SUM(B7:B" + (ultimaFilaDatos + 1) + ")"
+                );
+            } else {
+                cantidadTotal.setCellValue(0);
+            }
+
             cantidadTotal.setCellStyle(totalNumeroStyle);
 
             Cell recaudacionTotal = filaTotal.createCell(2);
-            recaudacionTotal.setCellFormula(
-                "SUM(C7:C" + (ultimaFilaDatos + 1) + ")"
-            );
+
+            if (ultimaFilaDatos >= 6) {
+                recaudacionTotal.setCellFormula(
+                    "SUM(C7:C" + (ultimaFilaDatos + 1) + ")"
+                );
+            } else {
+                recaudacionTotal.setCellValue(0);
+            }
+
             recaudacionTotal.setCellStyle(totalMonedaStyle);
 
             sheet.addMergedRegion(
                 new CellRangeAddress(rowNum, rowNum, 0, 0)
             );
 
-            // Configuracion de hoja
+            // Configuración de hoja
             configurarHoja(sheet, 3, 2, 5, rowNum);
 
             // Anchos de columnas
@@ -323,7 +341,7 @@ public class ExportarExcel {
 
             workbook.setForceFormulaRecalculation(true);
 
-            // Guardar
+            // Guardar archivo
             try (FileOutputStream fileOut = new FileOutputStream(rutaArchivo)) {
                 workbook.write(fileOut);
             }
@@ -360,7 +378,7 @@ public class ExportarExcel {
             );
         }
 
-        // Impresion horizontal
+        // Configuración de impresión
         sheet.getPrintSetup().setLandscape(true);
         sheet.getPrintSetup().setPaperSize(
             org.apache.poi.ss.usermodel.PrintSetup.A4_PAPERSIZE
@@ -370,16 +388,20 @@ public class ExportarExcel {
         sheet.getPrintSetup().setFitWidth((short) 1);
         sheet.getPrintSetup().setFitHeight((short) 0);
 
-        sheet.setMargin(Sheet.LeftMargin, 0.35);
-        sheet.setMargin(Sheet.RightMargin, 0.35);
-        sheet.setMargin(Sheet.TopMargin, 0.50);
-        sheet.setMargin(Sheet.BottomMargin, 0.50);
+        // Márgenes de impresión
+        sheet.setMargin(PageMargin.LEFT, 0.35);
+        sheet.setMargin(PageMargin.RIGHT, 0.35);
+        sheet.setMargin(PageMargin.TOP, 0.50);
+        sheet.setMargin(PageMargin.BOTTOM, 0.50);
 
         sheet.setHorizontallyCenter(true);
 
         // Repetir encabezados al imprimir
         sheet.setRepeatingRows(
-            new CellRangeAddress(filaEncabezado, filaEncabezado, 0, ultimaColumna)
+            new CellRangeAddress(
+                filaEncabezado, filaEncabezado,
+                0, ultimaColumna
+            )
         );
     }
 
@@ -396,9 +418,7 @@ public class ExportarExcel {
 
         CellStyle style = workbook.createCellStyle();
         style.setFont(font);
-        style.setFillForegroundColor(
-            org.apache.poi.ss.usermodel.IndexedColors.DARK_GREEN.getIndex()
-        );
+        style.setFillForegroundColor(IndexedColors.DARK_GREEN.getIndex());
         style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         style.setAlignment(HorizontalAlignment.CENTER);
         style.setVerticalAlignment(VerticalAlignment.CENTER);
@@ -443,9 +463,7 @@ public class ExportarExcel {
 
         CellStyle style = workbook.createCellStyle();
         style.setFont(font);
-        style.setFillForegroundColor(
-            IndexedColors.DARK_GREEN.getIndex()
-        );
+        style.setFillForegroundColor(IndexedColors.DARK_GREEN.getIndex());
         style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         style.setAlignment(HorizontalAlignment.CENTER);
         style.setVerticalAlignment(VerticalAlignment.CENTER);
@@ -470,9 +488,7 @@ public class ExportarExcel {
 
         CellStyle style = crearEstiloCuerpo(workbook);
 
-        style.setFillForegroundColor(
-            IndexedColors.LIGHT_GREEN.getIndex()
-        );
+        style.setFillForegroundColor(IndexedColors.LIGHT_GREEN.getIndex());
         style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
         return style;
@@ -519,9 +535,7 @@ public class ExportarExcel {
 
         CellStyle style = workbook.createCellStyle();
         style.setFont(font);
-        style.setFillForegroundColor(
-            IndexedColors.LIGHT_GREEN.getIndex()
-        );
+        style.setFillForegroundColor(IndexedColors.LIGHT_GREEN.getIndex());
         style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         style.setAlignment(HorizontalAlignment.LEFT);
 
@@ -539,9 +553,7 @@ public class ExportarExcel {
         font.setColor(IndexedColors.DARK_GREEN.getIndex());
 
         style.setFont(font);
-        style.setFillForegroundColor(
-            IndexedColors.LIGHT_GREEN.getIndex()
-        );
+        style.setFillForegroundColor(IndexedColors.LIGHT_GREEN.getIndex());
         style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
         return style;
@@ -556,9 +568,7 @@ public class ExportarExcel {
         font.setColor(IndexedColors.DARK_GREEN.getIndex());
 
         style.setFont(font);
-        style.setFillForegroundColor(
-            IndexedColors.LIGHT_GREEN.getIndex()
-        );
+        style.setFillForegroundColor(IndexedColors.LIGHT_GREEN.getIndex());
         style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
         return style;
@@ -575,9 +585,17 @@ public class ExportarExcel {
         style.setBorderLeft(BorderStyle.THIN);
         style.setBorderRight(BorderStyle.THIN);
 
-        style.setTopBorderColor(IndexedColors.GREY_25_PERCENT.getIndex());
-        style.setBottomBorderColor(IndexedColors.GREY_25_PERCENT.getIndex());
-        style.setLeftBorderColor(IndexedColors.GREY_25_PERCENT.getIndex());
-        style.setRightBorderColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        style.setTopBorderColor(
+            IndexedColors.GREY_25_PERCENT.getIndex()
+        );
+        style.setBottomBorderColor(
+            IndexedColors.GREY_25_PERCENT.getIndex()
+        );
+        style.setLeftBorderColor(
+            IndexedColors.GREY_25_PERCENT.getIndex()
+        );
+        style.setRightBorderColor(
+            IndexedColors.GREY_25_PERCENT.getIndex()
+        );
     }
 }

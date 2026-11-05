@@ -92,6 +92,13 @@ public class FrmPrincipal extends javax.swing.JFrame {
         INFO.put("caja", new String[] { "Control de Caja", "Apertura, arqueo y cierre de caja" });
         INFO.put("reportes", new String[] { "Reportes y PDF", "Indicadores de ventas y exportación" });
         INFO.put("usuarios", new String[] { "Usuarios", "Administración de usuarios y accesos" });
+        INFO.put("inicio", new String[]{"Dashboard", "Resumen general del día en la bodega"});
+        INFO.put("ventas", new String[]{"Nueva Venta (POS)", "Registra ventas y emite el comprobante"});
+        INFO.put("productos", new String[]{"Catálogo de Productos", "Registro, edición y consulta de productos"});
+        INFO.put("inventario", new String[]{"Inventario / Stock", "Control de existencias y movimientos"});
+        INFO.put("caja", new String[]{"Control de Caja", "Apertura, arqueo y cierre de caja"});
+        INFO.put("reportes", new String[]{"Reportes y Excel", "Indicadores de ventas y exportación"});
+        INFO.put("usuarios", new String[]{"Usuarios", "Administración de usuarios y accesos"});
     }
 
     public FrmPrincipal(Usuario usuario) {
@@ -106,6 +113,7 @@ public class FrmPrincipal extends javax.swing.JFrame {
         setMinimumSize(new Dimension(1024, 600));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
         setLayout(new BorderLayout());
 
         add(crearCabecera(), BorderLayout.NORTH);
@@ -115,8 +123,8 @@ public class FrmPrincipal extends javax.swing.JFrame {
 
         iniciarTimers();
 
-        // Módulo inicial (abre en Nueva Venta)
-        irA("ventas");
+        // El administrador inicia en el dashboard; el cajero entra directo al POS.
+        irA(esCajero ? "ventas" : "inicio");
     }
 
     private BufferedImage cargarLogo() {
@@ -282,11 +290,15 @@ public class FrmPrincipal extends javax.swing.JFrame {
         pnlMenu.add(Box.createRigidArea(new Dimension(0, 10)));
 
         agregarBoton(pnlMenu, "inicio", "Dashboard", "dashboard", !esCajero);
+        if (!esCajero) {
+            agregarBoton(pnlMenu, "inicio", "Dashboard", "dashboard", true);
+        }
         agregarBoton(pnlMenu, "ventas", "Nueva Venta (POS)", "carrito", true);
         agregarBoton(pnlMenu, "productos", "Catálogo Productos", "paquete", true);
         agregarBoton(pnlMenu, "inventario", "Inventario / Stock", "kardex", true);
         agregarBoton(pnlMenu, "caja", "Control de Caja", "caja", true);
         agregarBoton(pnlMenu, "reportes", "Reportes", "reporte", true);
+        agregarBoton(pnlMenu, "reportes", "Reportes y Excel", "reporte", true);
         agregarBoton(pnlMenu, "usuarios", "Usuarios", "usuarios", !esCajero);
 
         pnlMenu.add(Box.createVerticalGlue());
