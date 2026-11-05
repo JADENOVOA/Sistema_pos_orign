@@ -778,31 +778,35 @@ public class PnlReportes extends JPanel {
     // ===============================
     // MENSAJE DE EXPORTACIÓN
     // ===============================
+private void mostrarResultadoExportacion(
+        boolean exito,
+        String ruta
+) {
 
-    private void mostrarResultadoExportacion(
-            boolean exito,
-            String ruta
-    ) {
+    File archivo = new File(ruta);
 
-        if (exito) {
+    if (exito && archivo.exists()) {
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "¡Reporte exportado exitosamente!\n"
-                    + "Guardado en: " + ruta,
-                    "Éxito",
-                    JOptionPane.INFORMATION_MESSAGE
-            );
+        JOptionPane.showMessageDialog(
+                this,
+                "¡Reporte exportado exitosamente!\n\n"
+                + "Ubicación:\n" + archivo.getAbsolutePath()
+                + "\n\nTamaño: " + archivo.length() + " bytes",
+                "Éxito",
+                JOptionPane.INFORMATION_MESSAGE
+        );
 
-        } else {
+    } else {
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Ocurrió un error al crear el archivo Excel.\n"
-                    + "Verifica las librerías de Apache POI y la ruta.",
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE
-            );
-        }
+        JOptionPane.showMessageDialog(
+                this,
+                "No se pudo encontrar el archivo exportado.\n\n"
+                + "Ruta intentada:\n" + archivo.getAbsolutePath()
+                + "\n\n¿Existe el archivo?: " + archivo.exists()
+                + "\n¿Se completó la exportación?: " + exito,
+                "Error de exportación",
+                JOptionPane.ERROR_MESSAGE
+        );
     }
+}
 }

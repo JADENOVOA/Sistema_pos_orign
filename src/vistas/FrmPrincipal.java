@@ -61,37 +61,37 @@ public class FrmPrincipal extends javax.swing.JFrame {
     private Timer timerBD;
 
     private final SimpleDateFormat fmtHora = new SimpleDateFormat("HH:mm:ss");
-    private final SimpleDateFormat fmtFecha
-            = new SimpleDateFormat("EEEE, d 'de' MMMM yyyy", Locale.forLanguageTag("es-PE"));
+    private final SimpleDateFormat fmtFecha = new SimpleDateFormat("EEEE, d 'de' MMMM yyyy",
+            Locale.forLanguageTag("es-PE"));
 
     // Paleta de colores
-    private static final Color COLOR_PRIMARIO = new Color(21, 128, 61);      // Verde esmeralda
-    private static final Color COLOR_PRIMARIO_OSC = new Color(22, 101, 52);  // Verde oscuro
+    private static final Color COLOR_PRIMARIO = new Color(21, 128, 61); // Verde esmeralda
+    private static final Color COLOR_PRIMARIO_OSC = new Color(22, 101, 52); // Verde oscuro
     private static final Color COLOR_VERDE_CLARO = new Color(187, 247, 208);
-    private static final Color COLOR_NAV_BG = new Color(15, 23, 42);         // Slate 900
-    private static final Color COLOR_BTN_HOVER = new Color(30, 41, 59);      // Slate 800
-    private static final Color COLOR_FONDO = new Color(241, 245, 249);       // Slate 100
-    private static final Color COLOR_GRIS = new Color(100, 116, 139);        // Slate 500
-    private static final Color COLOR_TEXTO = new Color(15, 23, 42);          // Slate 900
-    private static final Color COLOR_BORDE = new Color(226, 232, 240);       // Slate 200
+    private static final Color COLOR_NAV_BG = new Color(15, 23, 42); // Slate 900
+    private static final Color COLOR_BTN_HOVER = new Color(30, 41, 59); // Slate 800
+    private static final Color COLOR_FONDO = new Color(241, 245, 249); // Slate 100
+    private static final Color COLOR_GRIS = new Color(100, 116, 139); // Slate 500
+    private static final Color COLOR_TEXTO = new Color(15, 23, 42); // Slate 900
+    private static final Color COLOR_BORDE = new Color(226, 232, 240); // Slate 200
 
     // Colores para gráficos
     private static final Color[] PALETA = {
-        new Color(21, 128, 61), new Color(37, 99, 235), new Color(217, 119, 6),
-        new Color(147, 51, 234), new Color(220, 38, 38), new Color(14, 165, 233)
+            new Color(21, 128, 61), new Color(37, 99, 235), new Color(217, 119, 6),
+            new Color(147, 51, 234), new Color(220, 38, 38), new Color(14, 165, 233)
     };
 
     // Título y subtítulo de cada módulo (se muestran en la cabecera)
     private static final Map<String, String[]> INFO = new HashMap<>();
 
     static {
-        INFO.put("inicio", new String[]{"Dashboard", "Resumen general del día en la bodega"});
-        INFO.put("ventas", new String[]{"Nueva Venta (POS)", "Registra ventas y emite el comprobante"});
-        INFO.put("productos", new String[]{"Catálogo de Productos", "Registro, edición y consulta de productos"});
-        INFO.put("inventario", new String[]{"Inventario / Stock", "Control de existencias y movimientos"});
-        INFO.put("caja", new String[]{"Control de Caja", "Apertura, arqueo y cierre de caja"});
-        INFO.put("reportes", new String[]{"Reportes y PDF", "Indicadores de ventas y exportación"});
-        INFO.put("usuarios", new String[]{"Usuarios", "Administración de usuarios y accesos"});
+        INFO.put("inicio", new String[] { "Dashboard", "Resumen general del día en la bodega" });
+        INFO.put("ventas", new String[] { "Nueva Venta (POS)", "Registra ventas y emite el comprobante" });
+        INFO.put("productos", new String[] { "Catálogo de Productos", "Registro, edición y consulta de productos" });
+        INFO.put("inventario", new String[] { "Inventario / Stock", "Control de existencias y movimientos" });
+        INFO.put("caja", new String[] { "Control de Caja", "Apertura, arqueo y cierre de caja" });
+        INFO.put("reportes", new String[] { "Reportes y PDF", "Indicadores de ventas y exportación" });
+        INFO.put("usuarios", new String[] { "Usuarios", "Administración de usuarios y accesos" });
     }
 
     public FrmPrincipal(Usuario usuario) {
@@ -120,32 +120,32 @@ public class FrmPrincipal extends javax.swing.JFrame {
     }
 
     private BufferedImage cargarLogo() {
-    String[] recursos = {"/imagen/logo.png", "/img/logo.png"};
-    String[] rutas = {"src/imagen/logo.png", "src/img/logo.png", "imagen/logo.png"};
-    try {
-        // 1) Desde el classpath
-        for (String r : recursos) {
-            URL u = FrmPrincipal.class.getResource(r);
-            if (u != null) {
-                System.out.println("[LOGO] Cargado desde classpath: " + u);
-                return ImageIO.read(u);
+        String[] recursos = { "/imagen/logo.png", "/img/logo.png" };
+        String[] rutas = { "src/imagen/logo.png", "src/img/logo.png", "imagen/logo.png" };
+        try {
+            // 1) Desde el classpath
+            for (String r : recursos) {
+                URL u = FrmPrincipal.class.getResource(r);
+                if (u != null) {
+                    System.out.println("[LOGO] Cargado desde classpath: " + u);
+                    return ImageIO.read(u);
+                }
             }
-        }
-        // 2) Desde el disco (carpeta del proyecto)
-        for (String r : rutas) {
-            File f = new File(r);
-            if (f.exists()) {
-                System.out.println("[LOGO] Cargado desde: " + f.getAbsolutePath());
-                return ImageIO.read(f);
+            // 2) Desde el disco (carpeta del proyecto)
+            for (String r : rutas) {
+                File f = new File(r);
+                if (f.exists()) {
+                    System.out.println("[LOGO] Cargado desde: " + f.getAbsolutePath());
+                    return ImageIO.read(f);
+                }
             }
+            System.out.println("[LOGO] NO ENCONTRADO. Carpeta de trabajo: "
+                    + new File(".").getAbsolutePath());
+        } catch (Exception e) {
+            System.out.println("[LOGO] Error al leer la imagen: " + e);
         }
-        System.out.println("[LOGO] NO ENCONTRADO. Carpeta de trabajo: "
-                + new File(".").getAbsolutePath());
-    } catch (Exception e) {
-        System.out.println("[LOGO] Error al leer la imagen: " + e);
+        return null;
     }
-    return null;
-}
 
     /** Reduce la imagen por pasos (mejor calidad que un solo salto). */
     private static BufferedImage escalar(BufferedImage src, int lado) {
@@ -170,7 +170,10 @@ public class FrmPrincipal extends javax.swing.JFrame {
         return dst;
     }
 
-    /** Ícono circular con el logo (fondo blanco, para que resalte sobre fondos oscuros o verdes). */
+    /**
+     * Ícono circular con el logo (fondo blanco, para que resalte sobre fondos
+     * oscuros o verdes).
+     */
     private Icon crearLogoCircular(final int lado) {
         final BufferedImage img = escalar(logoImg, lado);
         return new Icon() {
@@ -204,7 +207,6 @@ public class FrmPrincipal extends javax.swing.JFrame {
         pnl.setPreferredSize(new Dimension(1280, 68));
         pnl.setBorder(new EmptyBorder(0, 26, 0, 24));
 
-  
         JPanel izq = new JPanel();
         izq.setOpaque(false);
         izq.setLayout(new BoxLayout(izq, BoxLayout.Y_AXIS));
@@ -261,7 +263,6 @@ public class FrmPrincipal extends javax.swing.JFrame {
         return pnl;
     }
 
-
     private JPanel crearMenuLateral() {
         JPanel pnlMenu = new JPanel();
         pnlMenu.setBackground(COLOR_NAV_BG);
@@ -280,12 +281,12 @@ public class FrmPrincipal extends javax.swing.JFrame {
         pnlMenu.add(lblSeccion);
         pnlMenu.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        agregarBoton(pnlMenu, "inicio", "Dashboard", "dashboard", true);
+        agregarBoton(pnlMenu, "inicio", "Dashboard", "dashboard", !esCajero);
         agregarBoton(pnlMenu, "ventas", "Nueva Venta (POS)", "carrito", true);
         agregarBoton(pnlMenu, "productos", "Catálogo Productos", "paquete", true);
         agregarBoton(pnlMenu, "inventario", "Inventario / Stock", "kardex", true);
         agregarBoton(pnlMenu, "caja", "Control de Caja", "caja", true);
-        agregarBoton(pnlMenu, "reportes", "Reportes y PDF", "reporte", !esCajero);
+        agregarBoton(pnlMenu, "reportes", "Reportes", "reporte", true);
         agregarBoton(pnlMenu, "usuarios", "Usuarios", "usuarios", !esCajero);
 
         pnlMenu.add(Box.createVerticalGlue());
@@ -402,7 +403,6 @@ public class FrmPrincipal extends javax.swing.JFrame {
         return r.toUpperCase();
     }
 
-  
     private JPanel crearContenido() {
         cardLayout = new CardLayout();
         pnlContenido = new JPanel(cardLayout);
@@ -425,15 +425,13 @@ public class FrmPrincipal extends javax.swing.JFrame {
         return pnlContenido;
     }
 
-  
     private JPanel crearPie() {
         JPanel pnlFooter = new JPanel(new BorderLayout());
         pnlFooter.setBackground(Color.WHITE);
         pnlFooter.setPreferredSize(new Dimension(1280, 30));
         pnlFooter.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createMatteBorder(1, 0, 0, 0, COLOR_BORDE),
-                new EmptyBorder(4, 16, 4, 16)
-        ));
+                new EmptyBorder(4, 16, 4, 16)));
 
         JLabel lblIzq = new JLabel("Sistema POS Bodega La Peruanita v1.0  |  Integrador I (UTP)");
         lblIzq.setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -448,7 +446,6 @@ public class FrmPrincipal extends javax.swing.JFrame {
         return pnlFooter;
     }
 
-  
     private void irA(String clave) {
         BotonMenu b = botones.get(clave);
         if (b == null || !b.isEnabled()) {
@@ -902,7 +899,6 @@ public class FrmPrincipal extends javax.swing.JFrame {
         return Character.toUpperCase(t.charAt(0)) + t.substring(1);
     }
 
-
     private static class PanelBarras extends JPanel {
 
         private List<Object[]> datos = new ArrayList<>();
@@ -1102,6 +1098,7 @@ public class FrmPrincipal extends javax.swing.JFrame {
             super.paintComponent(g);
         }
     }
+
     private class BotonMenu extends JButton {
 
         private boolean activo = false;
@@ -1204,6 +1201,7 @@ public class FrmPrincipal extends javax.swing.JFrame {
             g2.dispose();
         }
     }
+
     private static class Pastilla extends JLabel {
 
         Pastilla(String texto) {
@@ -1344,7 +1342,7 @@ public class FrmPrincipal extends javax.swing.JFrame {
                         g2.drawArc(x + 3, y + 9, 12, 7, 0, 180);
                         break;
                     case "tienda":
-                        g2.drawPolygon(new int[]{x + 2, x + 9, x + 16}, new int[]{y + 6, y + 1, y + 6}, 3);
+                        g2.drawPolygon(new int[] { x + 2, x + 9, x + 16 }, new int[] { y + 6, y + 1, y + 6 }, 3);
                         g2.drawRect(x + 3, y + 6, 12, 9);
                         g2.drawRect(x + 7, y + 9, 4, 6);
                         break;
