@@ -1,6 +1,7 @@
 package dao;
 
 import conexion.ConexionBD;
+import modelo.ResultadoLogin;
 import modelo.Usuario;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -12,90 +13,100 @@ import java.util.List;
 
 public class UsuarioDAO {
 
-public Usuario autenticar(String usuario, String password) {
+public static final int MAX_INTENTOS = 3;
+public static final int MINUTOS_BLOQUEO = 15;
 
-    Usuario u = null;
+public ResultadoLogin autenticar(String usuario, String password) {
 
-    String sql = "SELECT "
-            + "id_usuario, "
-            + "nombre_completo, "
-            + "usuario, "
-            + "password, "
-            + "rol::text AS rol, "
-            + "estado::text AS estado "
-            + "FROM usuarios "
-            + "WHERE usuario = ? "
-            + "AND password = ? "
-            + "AND estado::text = 'Activo'";
+    String sql = "SELECT id_usuario, nombre_completo, usuario, password, "
+            + "rol::text AS rol, estado::text AS estado, intentos_fallidos, "
+            + "CASE WHEN bloqueado_hasta IS NOT NULL AND bloqueado_hasta > now() "
+            + "THEN CEIL(EXTRACT(EPOCH FROM (bloqueado_hasta - now())) / 60) "
+            + "ELSE 0 END AS min_bloqueo "
+            + "FROM usuarios WHERE LOWER(usuario) = LOWER(?)";
 
-    Connection con = ConexionBD.getConexion();
+    try (Connection con = ConexionBD.getConexion()) {
 
-    if (con == null) {
-        JOptionPane.showMessageDialog(
-                null,
-                "No se pudo conectar a PostgreSQL.",
-                "Error de conexión",
-                JOptionPane.ERROR_MESSAGE
-        );
+        if (con == null) {
+            return new ResultadoLogin(ResultadoLogin.Tipo.ERROR, null, 0, 0);
+        }
 
-        return null;
-    }
+        int id, intentos, minBloqueo;
+        String passBD, estado;
+        Usuario u = new Usuario();
 
-    try (PreparedStatement ps = con.prepareStatement(sql)) {
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, usuario.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    // usuario inexistente: mensaje genérico
+                    return new ResultadoLogin(ResultadoLogin.Tipo.INCORRECTO, null, 0, 0);
+                }
+                id = rs.getInt("id_usuario");
+                intentos = rs.getInt("intentos_fallidos");
+                minBloqueo = rs.getInt("min_bloqueo");
+                passBD = rs.getString("password");
+                estado = rs.getString("estado");
 
-        ps.setString(1, usuario.trim());
-        ps.setString(2, password);
-
-        try (ResultSet rs = ps.executeQuery()) {
-
-            if (rs.next()) {
-
-                u = new Usuario();
-
-                u.setIdUsuario(rs.getInt("id_usuario"));
+                u.setIdUsuario(id);
                 u.setNombreCompleto(rs.getString("nombre_completo"));
                 u.setUsuario(rs.getString("usuario"));
-                u.setPassword(rs.getString("password"));
+                u.setPassword(passBD);
                 u.setRol(rs.getString("rol"));
-                u.setEstado(rs.getString("estado"));
-
-                System.out.println(
-                        "LOGIN CORRECTO: "
-                        + u.getUsuario()
-                        + " | "
-                        + u.getRol()
-                );
-
-            } else {
-
-                System.out.println(
-                        "NO SE ENCONTRO EL USUARIO CON ESAS CREDENCIALES"
-                );
+                u.setEstado(estado);
             }
         }
+
+        // 1) Cuenta bloqueada por intentos fallidos
+        if (minBloqueo > 0) {
+            return new ResultadoLogin(ResultadoLogin.Tipo.BLOQUEADO, null, 0, minBloqueo);
+        }
+
+        // 2) Contraseña incorrecta -> sumar intento
+        if (passBD == null || !passBD.equals(password)) {
+            intentos++;
+            if (intentos >= MAX_INTENTOS) {
+                try (PreparedStatement ps = con.prepareStatement(
+                        "UPDATE usuarios SET intentos_fallidos = 0, "
+                        + "bloqueado_hasta = now() + (? * interval '1 minute') "
+                        + "WHERE id_usuario = ?")) {
+                    ps.setInt(1, MINUTOS_BLOQUEO);
+                    ps.setInt(2, id);
+                    ps.executeUpdate();
+                }
+                return new ResultadoLogin(ResultadoLogin.Tipo.BLOQUEADO, null, 0, MINUTOS_BLOQUEO);
+            }
+            try (PreparedStatement ps = con.prepareStatement(
+                    "UPDATE usuarios SET intentos_fallidos = ? WHERE id_usuario = ?")) {
+                ps.setInt(1, intentos);
+                ps.setInt(2, id);
+                ps.executeUpdate();
+            }
+            return new ResultadoLogin(ResultadoLogin.Tipo.INCORRECTO, null,
+                    MAX_INTENTOS - intentos, 0);
+        }
+
+        // 3) Credenciales correctas pero usuario inactivo
+        if (!"Activo".equalsIgnoreCase(estado)) {
+            return new ResultadoLogin(ResultadoLogin.Tipo.INACTIVO, null, 0, 0);
+        }
+
+        // 4) Acceso correcto -> reiniciar contador
+        try (PreparedStatement ps = con.prepareStatement(
+                "UPDATE usuarios SET intentos_fallidos = 0, bloqueado_hasta = NULL "
+                + "WHERE id_usuario = ?")) {
+            ps.setInt(1, id);
+            ps.executeUpdate();
+        }
+
+        return new ResultadoLogin(ResultadoLogin.Tipo.OK, u, 0, 0);
 
     } catch (SQLException e) {
-
         e.printStackTrace();
-
-        System.err.println(
-                "Error al ejecutar login: "
-                + e.getMessage()
-        );
-
-    } finally {
-
-        try {
-            if (con != null) {
-                con.close();
-            }
-        } catch (SQLException ignored) {
-        }
+        return new ResultadoLogin(ResultadoLogin.Tipo.ERROR, null, 0, 0);
     }
-
-    return u;
 }
-    
+
     // LISTAR USUARIOS
 public List<Usuario> listarTodos() {
 

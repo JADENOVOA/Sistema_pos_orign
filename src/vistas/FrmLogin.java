@@ -2,6 +2,7 @@
 package vistas;
 
 import dao.UsuarioDAO;
+import modelo.ResultadoLogin;
 import modelo.Usuario;
 
 import javax.swing.*;
@@ -420,35 +421,69 @@ public class FrmLogin extends JFrame {
 
                         UsuarioDAO dao = new UsuarioDAO();
 
-                        Usuario u = dao.autenticar(
+                        ResultadoLogin r = dao.autenticar(
                                         usuario,
                                         password);
 
-                        if (u != null) {
+                        switch (r.getTipo()) {
 
-                                JOptionPane.showMessageDialog(
-                                                this,
-                                                "Bienvenido(a) "
-                                                                + u.getNombreCompleto()
-                                                                + "\nRol: "
-                                                                + u.getRol(),
-                                                "Ingreso correcto",
-                                                JOptionPane.INFORMATION_MESSAGE);
+                                case OK:
+                                        Usuario u = r.getUsuario();
+                                        JOptionPane.showMessageDialog(
+                                                        this,
+                                                        "Bienvenido(a) "
+                                                                        + u.getNombreCompleto()
+                                                                        + "\nRol: "
+                                                                        + u.getRol(),
+                                                        "Ingreso correcto",
+                                                        JOptionPane.INFORMATION_MESSAGE);
+                                        new FrmPrincipal(u).setVisible(true);
+                                        dispose();
+                                        return;
 
-                                new FrmPrincipal(u).setVisible(true);
-                                dispose();
+                                case INACTIVO:
+                                        JOptionPane.showMessageDialog(
+                                                        this,
+                                                        "Usuario inactivo, no puede ingresar al sistema",
+                                                        "Acceso denegado",
+                                                        JOptionPane.ERROR_MESSAGE);
+                                        break;
 
-                        } else {
+                                case BLOQUEADO:
+                                        JOptionPane.showMessageDialog(
+                                                        this,
+                                                        "Usuario bloqueado por superar "
+                                                                        + UsuarioDAO.MAX_INTENTOS
+                                                                        + " intentos fallidos.\n"
+                                                                        + "Intente nuevamente en "
+                                                                        + r.getMinutosRestantes()
+                                                                        + " minuto(s).",
+                                                        "Usuario bloqueado",
+                                                        JOptionPane.ERROR_MESSAGE);
+                                        break;
 
-                                JOptionPane.showMessageDialog(
-                                                this,
-                                                "Usuario o contraseña incorrectos.",
-                                                "Acceso denegado",
-                                                JOptionPane.ERROR_MESSAGE);
+                                case INCORRECTO:
+                                        String extra = r.getIntentosRestantes() > 0
+                                                        ? "\nLe quedan " + r.getIntentosRestantes()
+                                                                        + " intento(s)."
+                                                        : "";
+                                        JOptionPane.showMessageDialog(
+                                                        this,
+                                                        "Usuario o contraseña incorrectos." + extra,
+                                                        "Acceso denegado",
+                                                        JOptionPane.ERROR_MESSAGE);
+                                        break;
 
-                                txtPassword.setText("");
-                                txtPassword.requestFocus();
+                                default:
+                                        JOptionPane.showMessageDialog(
+                                                        this,
+                                                        "No se pudo conectar a PostgreSQL.",
+                                                        "Error de conexión",
+                                                        JOptionPane.ERROR_MESSAGE);
                         }
+
+                        txtPassword.setText("");
+                        txtPassword.requestFocus();
 
                 } catch (Exception ex) {
 

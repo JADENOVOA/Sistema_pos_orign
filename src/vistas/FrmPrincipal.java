@@ -59,6 +59,7 @@ public class FrmPrincipal extends javax.swing.JFrame {
     private JLabel lblEstadoBD;
     private Timer timerReloj;
     private Timer timerBD;
+    private util.InactividadSesion inactividad;
 
     private final SimpleDateFormat fmtHora = new SimpleDateFormat("HH:mm:ss");
     private final SimpleDateFormat fmtFecha = new SimpleDateFormat("EEEE, d 'de' MMMM yyyy",
@@ -115,6 +116,21 @@ public class FrmPrincipal extends javax.swing.JFrame {
         add(crearPie(), BorderLayout.SOUTH);
 
         iniciarTimers();
+
+        inactividad = new util.InactividadSesion(() -> {
+            for (java.awt.Window w : java.awt.Window.getWindows()) {
+                if (w != this && w.isDisplayable()) {
+                    w.dispose(); // cierra diálogos abiertos
+                }
+            }
+            JOptionPane.showMessageDialog(null,
+                    "Su sesión se cerró por " + util.InactividadSesion.MINUTOS
+                            + " minutos de inactividad.",
+                    "Sesión expirada", JOptionPane.INFORMATION_MESSAGE);
+            new FrmLogin().setVisible(true);
+            dispose();
+        });
+        inactividad.iniciar();
 
         // El administrador inicia en el dashboard; el cajero entra directo al POS.
         irA(esCajero ? "ventas" : "inicio");
@@ -887,6 +903,9 @@ public class FrmPrincipal extends javax.swing.JFrame {
 
     @Override
     public void dispose() {
+        if (inactividad != null) {
+            inactividad.detener();
+        }
         if (timerReloj != null) {
             timerReloj.stop();
         }

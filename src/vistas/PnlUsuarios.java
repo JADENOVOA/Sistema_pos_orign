@@ -295,6 +295,17 @@ public class PnlUsuarios extends JPanel {
                         return;
                 }
 
+                if (!util.ValidadorPassword.esSegura(password)) {
+
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        util.ValidadorPassword.REQUISITOS,
+                                        "Contraseña no segura",
+                                        JOptionPane.WARNING_MESSAGE);
+
+                        return;
+                }
+
                 if (usuarioDAO.existeUsuario(usuario)) {
 
                         JOptionPane.showMessageDialog(
@@ -411,6 +422,17 @@ public class PnlUsuarios extends JPanel {
                         JOptionPane.showMessageDialog(
                                         this,
                                         "Ingrese la contraseña.");
+
+                        return;
+                }
+
+                if (!util.ValidadorPassword.esSegura(u.getPassword())) {
+
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        util.ValidadorPassword.REQUISITOS,
+                                        "Contraseña no segura",
+                                        JOptionPane.WARNING_MESSAGE);
 
                         return;
                 }
