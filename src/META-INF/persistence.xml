@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence" version="3.2">
+    <persistence-unit name="BodegaPU" transaction-type="RESOURCE_LOCAL">
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+        <class>entidades.RolEntity</class>
+        <class>entidades.CategoriaEntity</class>
+        <class>entidades.UnidadMedidaEntity</class>
+        <class>entidades.ClienteEntity</class>
+        <class>entidades.MetodoPagoEntity</class>
+        <class>entidades.UsuarioEntity</class>
+        <class>entidades.ProductoEntity</class>
+        <class>entidades.CajaEntity</class>
+        <class>entidades.VentaEntity</class>
+        <class>entidades.DetalleVentaEntity</class>
+        <class>entidades.MovimientoInventarioEntity</class>
+        <exclude-unlisted-classes>true</exclude-unlisted-classes>
+        <properties>
+            <property name="hibernate.hbm2ddl.auto" value="update"/>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect"/>
+            <property name="hibernate.show_sql" value="false"/>
+        </properties>
+    </persistence-unit>
+</persistence>

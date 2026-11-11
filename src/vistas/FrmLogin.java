@@ -1,6 +1,7 @@
 
 package vistas;
 
+import conexion.JPAUtil;
 import dao.UsuarioDAO;
 import modelo.ResultadoLogin;
 import modelo.Usuario;
@@ -429,16 +430,17 @@ public class FrmLogin extends JFrame {
 
                                 case OK:
                                         Usuario u = r.getUsuario();
+                                        FrmPrincipal principal = new FrmPrincipal(u);
+                                        dispose();
+                                        principal.setVisible(true);
                                         JOptionPane.showMessageDialog(
-                                                        this,
+                                                        principal,
                                                         "Bienvenido(a) "
                                                                         + u.getNombreCompleto()
                                                                         + "\nRol: "
                                                                         + u.getRol(),
                                                         "Ingreso correcto",
                                                         JOptionPane.INFORMATION_MESSAGE);
-                                        new FrmPrincipal(u).setVisible(true);
-                                        dispose();
                                         return;
 
                                 case INACTIVO:
@@ -487,6 +489,8 @@ public class FrmLogin extends JFrame {
 
                 } catch (Exception ex) {
 
+                        ex.printStackTrace();
+
                         JOptionPane.showMessageDialog(
                                         this,
                                         "No se pudo iniciar sesión.\n"
@@ -513,7 +517,19 @@ public class FrmLogin extends JFrame {
                 }
 
                 EventQueue.invokeLater(() -> {
-                        new FrmLogin().setVisible(true);
+                        try {
+                                JPAUtil.inicializarEsquema();
+                                new FrmLogin().setVisible(true);
+                        } catch (Exception ex) {
+                                ex.printStackTrace();
+                                JOptionPane.showMessageDialog(
+                                                null,
+                                                "No se pudo preparar la base de datos.\n"
+                                                                + ex.getMessage()
+                                                                + "\n\nVerifica que PostgreSQL esté iniciado y que la base configurada exista.",
+                                                "Error al iniciar el sistema",
+                                                JOptionPane.ERROR_MESSAGE);
+                        }
                 });
         }
 }

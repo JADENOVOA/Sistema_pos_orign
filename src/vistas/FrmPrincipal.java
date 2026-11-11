@@ -4,6 +4,7 @@ import conexion.ConexionBD;
 import dao.InventarioDAO;
 import dao.ReporteDAO;
 import modelo.Usuario;
+import util.InactividadSesion;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -59,7 +60,7 @@ public class FrmPrincipal extends javax.swing.JFrame {
     private JLabel lblEstadoBD;
     private Timer timerReloj;
     private Timer timerBD;
-    private util.InactividadSesion inactividad;
+    private InactividadSesion inactividad;
 
     private final SimpleDateFormat fmtHora = new SimpleDateFormat("HH:mm:ss");
     private final SimpleDateFormat fmtFecha = new SimpleDateFormat("EEEE, d 'de' MMMM yyyy",
@@ -86,14 +87,14 @@ public class FrmPrincipal extends javax.swing.JFrame {
     private static final Map<String, String[]> INFO = new HashMap<>();
 
     static {
-    INFO.put("inicio", new String[]{"Dashboard", "Resumen general del día en la bodega"});
-    INFO.put("ventas", new String[]{"Nueva Venta (POS)", "Registra ventas y emite el comprobante"});
-    INFO.put("productos", new String[]{"Catálogo de Productos", "Registro, edición y consulta de productos"});
-    INFO.put("inventario", new String[]{"Inventario / Stock", "Control de existencias y movimientos"});
-    INFO.put("caja", new String[]{"Control de Caja", "Apertura, arqueo y cierre de caja"});
-    INFO.put("reportes", new String[]{"Reportes", "Indicadores de ventas y exportación a Excel"});
-    INFO.put("usuarios", new String[]{"Usuarios", "Administración de usuarios y accesos"});
-}
+        INFO.put("inicio", new String[] { "Dashboard", "Resumen general del día en la bodega" });
+        INFO.put("ventas", new String[] { "Nueva Venta (POS)", "Registra ventas y emite el comprobante" });
+        INFO.put("productos", new String[] { "Catálogo de Productos", "Registro, edición y consulta de productos" });
+        INFO.put("inventario", new String[] { "Inventario / Stock", "Control de existencias y movimientos" });
+        INFO.put("caja", new String[] { "Control de Caja", "Apertura, arqueo y cierre de caja" });
+        INFO.put("reportes", new String[] { "Reportes", "Indicadores de ventas y exportación a Excel" });
+        INFO.put("usuarios", new String[] { "Usuarios", "Administración de usuarios y accesos" });
+    }
 
     public FrmPrincipal(Usuario usuario) {
         this.usuarioLogueado = usuario;
@@ -117,14 +118,14 @@ public class FrmPrincipal extends javax.swing.JFrame {
 
         iniciarTimers();
 
-        inactividad = new util.InactividadSesion(() -> {
+        inactividad = new InactividadSesion(() -> {
             for (java.awt.Window w : java.awt.Window.getWindows()) {
                 if (w != this && w.isDisplayable()) {
                     w.dispose(); // cierra diálogos abiertos
                 }
             }
             JOptionPane.showMessageDialog(null,
-                    "Su sesión se cerró por " + util.InactividadSesion.MINUTOS
+                    "Su sesión se cerró por " + InactividadSesion.MINUTOS
                             + " minutos de inactividad.",
                     "Sesión expirada", JOptionPane.INFORMATION_MESSAGE);
             new FrmLogin().setVisible(true);
@@ -280,77 +281,77 @@ public class FrmPrincipal extends javax.swing.JFrame {
         return pnl;
     }
 
-   private JPanel crearMenuLateral() {
-    JPanel pnlMenu = new JPanel();
-    pnlMenu.setBackground(COLOR_NAV_BG);
-    pnlMenu.setPreferredSize(new Dimension(250, 600));
-    pnlMenu.setLayout(new BoxLayout(pnlMenu, BoxLayout.Y_AXIS));
-    pnlMenu.setBorder(new EmptyBorder(18, 12, 14, 12));
+    private JPanel crearMenuLateral() {
+        JPanel pnlMenu = new JPanel();
+        pnlMenu.setBackground(COLOR_NAV_BG);
+        pnlMenu.setPreferredSize(new Dimension(250, 600));
+        pnlMenu.setLayout(new BoxLayout(pnlMenu, BoxLayout.Y_AXIS));
+        pnlMenu.setBorder(new EmptyBorder(18, 12, 14, 12));
 
-    pnlMenu.add(crearMarca());
-    pnlMenu.add(Box.createRigidArea(new Dimension(0, 22)));
+        pnlMenu.add(crearMarca());
+        pnlMenu.add(Box.createRigidArea(new Dimension(0, 22)));
 
-    JLabel lblSeccion = new JLabel("MENÚ PRINCIPAL");
-    lblSeccion.setForeground(new Color(100, 116, 139));
-    lblSeccion.setFont(new Font("Segoe UI", Font.BOLD, 11));
-    lblSeccion.setAlignmentX(Component.LEFT_ALIGNMENT);
-    lblSeccion.setBorder(new EmptyBorder(0, 6, 0, 0));
+        JLabel lblSeccion = new JLabel("MENÚ PRINCIPAL");
+        lblSeccion.setForeground(new Color(100, 116, 139));
+        lblSeccion.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        lblSeccion.setAlignmentX(Component.LEFT_ALIGNMENT);
+        lblSeccion.setBorder(new EmptyBorder(0, 6, 0, 0));
 
-    pnlMenu.add(lblSeccion);
-    pnlMenu.add(Box.createRigidArea(new Dimension(0, 10)));
+        pnlMenu.add(lblSeccion);
+        pnlMenu.add(Box.createRigidArea(new Dimension(0, 10)));
 
-    // Dashboard: solamente para el administrador
-    if (!esCajero) {
-        agregarBoton(pnlMenu, "inicio", "Dashboard", "dashboard", true);
+        // Dashboard: solamente para el administrador
+        if (!esCajero) {
+            agregarBoton(pnlMenu, "inicio", "Dashboard", "dashboard", true);
+        }
+
+        // Módulos disponibles
+        agregarBoton(pnlMenu, "ventas", "Nueva Venta (POS)", "carrito", true);
+        agregarBoton(pnlMenu, "productos", "Catálogo Productos", "paquete", true);
+        agregarBoton(pnlMenu, "inventario", "Inventario / Stock", "kardex", true);
+        agregarBoton(pnlMenu, "caja", "Control de Caja", "caja", true);
+        agregarBoton(pnlMenu, "reportes", "Reportes", "reporte", true);
+
+        // Usuarios: solamente para el administrador
+        if (!esCajero) {
+            agregarBoton(pnlMenu, "usuarios", "Usuarios", "usuarios", true);
+        }
+
+        pnlMenu.add(Box.createVerticalGlue());
+        pnlMenu.add(Box.createRigidArea(new Dimension(0, 12)));
+        pnlMenu.add(crearTarjetaUsuario());
+        pnlMenu.add(Box.createRigidArea(new Dimension(0, 10)));
+
+        btnCerrarSesion = new BotonMenu(
+                "Cerrar Sesión",
+                "salir",
+                new Color(127, 29, 29),
+                new Color(153, 27, 27));
+
+        btnCerrarSesion.addActionListener(e -> cerrarSesion());
+        pnlMenu.add(btnCerrarSesion);
+
+        return pnlMenu;
     }
 
-    // Módulos disponibles
-    agregarBoton(pnlMenu, "ventas", "Nueva Venta (POS)", "carrito", true);
-    agregarBoton(pnlMenu, "productos", "Catálogo Productos", "paquete", true);
-    agregarBoton(pnlMenu, "inventario", "Inventario / Stock", "kardex", true);
-    agregarBoton(pnlMenu, "caja", "Control de Caja", "caja", true);
-    agregarBoton(pnlMenu, "reportes", "Reportes", "reporte", true);
-
-    // Usuarios: solamente para el administrador
-    if (!esCajero) {
-        agregarBoton(pnlMenu, "usuarios", "Usuarios", "usuarios", true);
-    }
-
-    pnlMenu.add(Box.createVerticalGlue());
-    pnlMenu.add(Box.createRigidArea(new Dimension(0, 12)));
-    pnlMenu.add(crearTarjetaUsuario());
-    pnlMenu.add(Box.createRigidArea(new Dimension(0, 10)));
-
-    btnCerrarSesion = new BotonMenu(
-            "Cerrar Sesión",
-            "salir",
-            new Color(127, 29, 29),
-            new Color(153, 27, 27)
-    );
-
-    btnCerrarSesion.addActionListener(e -> cerrarSesion());
-    pnlMenu.add(btnCerrarSesion);
-
-    return pnlMenu;
-}
     private void agregarBoton(JPanel pnl, String clave, String texto,
-        String icono, boolean permitido) {
+            String icono, boolean permitido) {
 
-    BotonMenu b = new BotonMenu(texto, icono, null, null);
+        BotonMenu b = new BotonMenu(texto, icono, null, null);
 
-    if (permitido) {
-        b.addActionListener(e -> irA(clave));
-    } else {
-        b.setEnabled(false);
-        b.setCursor(Cursor.getDefaultCursor());
-        b.setToolTipText("Disponible solo para el rol Administrador");
+        if (permitido) {
+            b.addActionListener(e -> irA(clave));
+        } else {
+            b.setEnabled(false);
+            b.setCursor(Cursor.getDefaultCursor());
+            b.setToolTipText("Disponible solo para el rol Administrador");
+        }
+
+        botones.put(clave, b);
+
+        pnl.add(b);
+        pnl.add(Box.createRigidArea(new Dimension(0, 6)));
     }
-
-    botones.put(clave, b);
-
-    pnl.add(b);
-    pnl.add(Box.createRigidArea(new Dimension(0, 6)));
-}
 
     /** Logo + nombre de la bodega, en la parte superior del menú. */
     private JPanel crearMarca() {
