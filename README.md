@@ -17,7 +17,7 @@ Se conserva esta ubicación porque también hay configuración de NetBeans/Ant (
 
 ## Base de datos JPA
 
-Al iniciar la aplicación, Hibernate revisa el esquema PostgreSQL y crea o actualiza las tablas y claves foráneas declaradas en `src/entidades`. La actualización usa `hibernate.hbm2ddl.auto=update`: conserva los datos y no borra tablas existentes. También inserta, solo si faltan, los roles, categorías, unidades y métodos de pago iniciales.
+Al iniciar la aplicación, Hibernate revisa el esquema PostgreSQL y crea o actualiza las tablas y claves foráneas declaradas en `src/entidades`. La actualización usa `hibernate.hbm2ddl.auto=update`: conserva los datos y no borra tablas existentes. También agrega si faltan las columnas de bloqueo de usuarios y carga, sin duplicar, roles, categorías, unidades, métodos de pago y datos de demostración para las 11 tablas. Las cuentas iniciales son `demo_admin` y `demo_cajero`, ambas con contraseña `demo-inactivo-2026`.
 
 PostgreSQL debe estar instalado y encendido, y la base de datos configurada debe existir. Por defecto se usa `jdbc:postgresql://localhost:5432/BODEGA_LAPERUANITA`, usuario `postgres` y contraseña `root`. Se pueden cambiar con las variables de entorno `BODEGA_DB_URL`, `BODEGA_DB_USER` y `BODEGA_DB_PASSWORD`.
 
