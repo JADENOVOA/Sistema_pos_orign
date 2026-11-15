@@ -32,3 +32,12 @@ Para generar el ejecutable con dependencias incluidas:
 ```powershell
 .\mvnw.cmd package
 ```
+
+## Seguridad (casos de prueba)
+
+- Configuración sin claves en el código: `bodega.properties` (ver `.gitignore`). Cuenta ADMIN solo para crear tablas/restaurar; la app trabaja con `pos_app` (sin DROP/ALTER/DELETE).
+- SSL obligatorio (`db.sslmode=require`): ver `docs/ACTIVAR_SSL_POSTGRESQL.md`.
+- Contraseñas con PBKDF2-HMAC-SHA256 + sal; las existentes se cifran al iniciar.
+- Módulo **Seguridad** (solo Administrador): auditoría de solo lectura, respaldos/restauración y control de integridad SHA-256.
+- Auditoría de dependencias: `.\mvnw.cmd -Pseguridad verify`.
+- Guía de evidencias: `docs/GUIA_PRUEBAS_Y_EVIDENCIAS.md`.

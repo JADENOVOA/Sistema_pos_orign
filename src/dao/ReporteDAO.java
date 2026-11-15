@@ -55,7 +55,7 @@ public class ReporteDAO {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            util.Log.error(e);
         }
 
         return 0.0;
@@ -84,7 +84,7 @@ public class ReporteDAO {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            util.Log.error(e);
         }
 
         return 0;
@@ -113,7 +113,7 @@ public class ReporteDAO {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            util.Log.error(e);
         }
 
         return 0.0;
@@ -162,7 +162,7 @@ public class ReporteDAO {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            util.Log.error(e);
         }
 
         return lista;
@@ -203,7 +203,7 @@ public class ReporteDAO {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            util.Log.error(e);
         }
 
         return lista;

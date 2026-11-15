@@ -415,6 +415,22 @@ public class FrmLogin extends JFrame {
                         return;
                 }
 
+                if (util.Validador.usuario(usuario) != null
+                                || util.Validador.password(password) != null) {
+                        // Formato imposible para un usuario real (p. ej. ' OR '1'='1' --): se rechaza sin consultar la BD
+                        dao.AuditoriaDAO.registrar(null, util.Validador.escaparHtml(
+                                        usuario.length() > 30 ? usuario.substring(0, 30) : usuario),
+                                        "Autenticación", "LOGIN_FALLIDO",
+                                        "Formato de usuario/contraseña no válido (posible inyección)");
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Usuario o contraseña incorrectos.",
+                                        "Acceso denegado",
+                                        JOptionPane.ERROR_MESSAGE);
+                        txtPassword.setText("");
+                        return;
+                }
+
                 btnIngresar.setEnabled(false);
                 btnIngresar.setText("VERIFICANDO...");
 
@@ -479,7 +495,8 @@ public class FrmLogin extends JFrame {
                                 default:
                                         JOptionPane.showMessageDialog(
                                                         this,
-                                                        "No se pudo conectar a PostgreSQL.",
+                                                        "No se pudo conectar con el servidor de datos.\n"
+                                                                        + "Intente nuevamente o contacte al administrador.",
                                                         "Error de conexión",
                                                         JOptionPane.ERROR_MESSAGE);
                         }
@@ -489,12 +506,12 @@ public class FrmLogin extends JFrame {
 
                 } catch (Exception ex) {
 
-                        ex.printStackTrace();
+                        util.Log.error("Error al iniciar sesión", ex);
 
                         JOptionPane.showMessageDialog(
                                         this,
                                         "No se pudo iniciar sesión.\n"
-                                                        + "Detalle: " + ex.getMessage(),
+                                                        + "Intente nuevamente o contacte al administrador.",
                                         "Error de acceso",
                                         JOptionPane.ERROR_MESSAGE);
 
@@ -507,6 +524,19 @@ public class FrmLogin extends JFrame {
                 }
         }
 
+        /** Cualquier error no controlado se registra en el log y se muestra un mensaje genérico. */
+        private static void instalarManejadorDeErrores() {
+                Thread.UncaughtExceptionHandler h = (hilo, error) -> {
+                        util.Log.error("Error no controlado en " + hilo.getName(), error);
+                        try {
+                                EventQueue.invokeLater(() -> JOptionPane.showMessageDialog(null,
+                                                util.Log.MENSAJE_GENERICO, "Error", JOptionPane.ERROR_MESSAGE));
+                        } catch (RuntimeException ignored) {
+                        }
+                };
+                Thread.setDefaultUncaughtExceptionHandler(h);
+        }
+
         // MÉTODO MAIN
         public static void main(String args[]) {
 
@@ -516,17 +546,27 @@ public class FrmLogin extends JFrame {
                 } catch (Exception ignored) {
                 }
 
+                instalarManejadorDeErrores();
+
                 EventQueue.invokeLater(() -> {
                         try {
                                 JPAUtil.inicializarEsquema();
+                                util.IntegridadArchivos.verificarAlIniciar();
                                 new FrmLogin().setVisible(true);
                         } catch (Exception ex) {
-                                ex.printStackTrace();
+                                // El detalle técnico va al log interno; en pantalla solo un mensaje genérico
+                                util.Log.error("Error al iniciar el sistema", ex);
+                                String causa = String.valueOf(ex.getMessage()).toLowerCase();
+                                String pista = causa.contains("ssl")
+                                                ? "\n\nEl servidor no acepta conexión cifrada (SSL). Active SSL en PostgreSQL "
+                                                                + "(ver docs/ACTIVAR_SSL_POSTGRESQL.md)."
+                                                : "";
                                 JOptionPane.showMessageDialog(
                                                 null,
-                                                "No se pudo preparar la base de datos.\n"
-                                                                + ex.getMessage()
-                                                                + "\n\nVerifica que PostgreSQL esté iniciado y que la base configurada exista.",
+                                                "No se pudo iniciar el sistema.\n"
+                                                                + "Verifique que el servidor de datos esté encendido y que la configuración "
+                                                                + "sea correcta, o contacte al administrador." + pista
+                                                                + "\n\n(El detalle quedó en el registro interno de errores.)",
                                                 "Error al iniciar el sistema",
                                                 JOptionPane.ERROR_MESSAGE);
                         }

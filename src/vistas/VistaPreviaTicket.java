@@ -279,10 +279,11 @@ public class VistaPreviaTicket extends JDialog {
 
         } catch (PrinterException ex) {
 
+            util.Log.error("Impresión de ticket", ex);
+
             JOptionPane.showMessageDialog(
                     this,
-                    "No se pudo imprimir el ticket:\n"
-                            + ex.getMessage(),
+                    "No se pudo imprimir el ticket.\nVerifique la impresora e intente nuevamente.",
                     "Error de impresión",
                     JOptionPane.ERROR_MESSAGE);
         }

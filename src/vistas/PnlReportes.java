@@ -645,7 +645,19 @@ public class PnlReportes extends JPanel {
     // EXPORTAR A EXCEL
     // ===============================
 
+    private modelo.Usuario usuarioActual;
+
+    /** Usuario con sesión: se usa para validar el permiso al exportar y para la auditoría. */
+    public void setUsuario(modelo.Usuario usuario) {
+        this.usuarioActual = usuario;
+    }
+
     private void exportarExcel() {
+
+        if (!util.Permisos.autorizar(this, usuarioActual, util.Permisos.Modulo.REPORTES, "Exportar reporte")) {
+            return;
+        }
+        dao.AuditoriaDAO.registrar(usuarioActual, "Reportes", "REPORTE_EXPORTADO", "Periodo " + periodoActual);
 
         String[] opciones = {
             "Productos más vendidos",

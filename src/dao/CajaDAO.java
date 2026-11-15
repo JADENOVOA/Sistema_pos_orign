@@ -11,8 +11,6 @@ import java.sql.Statement;
 import javax.swing.table.DefaultTableModel;
 
 public class CajaDAO {
-
-    // 1. ABRIR CAJA
     public int abrirCaja(Caja caja) {
 
         String sql = "INSERT INTO cajas "
@@ -38,7 +36,7 @@ public class CajaDAO {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            util.Log.error(e);
             System.err.println("Error al abrir caja: " + e.getMessage());
         }
 
@@ -82,7 +80,7 @@ System.out.println("ID USUARIO RECIBIDO: " + idUsuario);
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            util.Log.error(e);
             System.err.println(
                     "Error al buscar caja abierta: " + e.getMessage()
             );
@@ -113,7 +111,7 @@ System.out.println("ID USUARIO RECIBIDO: " + idUsuario);
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            util.Log.error(e);
         }
 
         return 0.0;
@@ -140,7 +138,7 @@ System.out.println("ID USUARIO RECIBIDO: " + idUsuario);
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            util.Log.error(e);
         }
 
         return 0.0;
@@ -166,7 +164,7 @@ System.out.println("ID USUARIO RECIBIDO: " + idUsuario);
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            util.Log.error(e);
         }
 
         return 0.0;
@@ -202,7 +200,7 @@ System.out.println("ID USUARIO RECIBIDO: " + idUsuario);
             return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            util.Log.error(e);
             System.err.println(
                     "Error al cerrar caja: " + e.getMessage()
             );
@@ -248,7 +246,7 @@ System.out.println("ID USUARIO RECIBIDO: " + idUsuario);
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            util.Log.error(e);
         }
     }
 }

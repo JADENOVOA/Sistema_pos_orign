@@ -3,30 +3,77 @@ package conexion;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import util.Config;
 
 public class ConexionBD {
-    // Parámetros de conexión a PostgreSQL
-    private static final String URL = System.getenv().getOrDefault(
-            "BODEGA_DB_URL", "jdbc:postgresql://localhost:5432/BODEGA_LAPERUANITA");
-    private static final String USER = System.getenv().getOrDefault("BODEGA_DB_USER", "postgres");
-    private static final String PASSWORD = System.getenv().getOrDefault("BODEGA_DB_PASSWORD", "root");
 
-    public static String getUrl() { return URL; }
-    public static String getUsuario() { return USER; }
-    public static String getPassword() { return PASSWORD; }
+    private static final String URL_BASE = Config.get(
+            "BODEGA_DB_URL", "db.url", "jdbc:postgresql://localhost:5432/BODEGA_LAPERUANITA");
+    private static final String SSLMODE = Config.get("BODEGA_DB_SSLMODE", "db.sslmode", "require");
 
-    public static Connection getConexion() {
+    private static final String ADMIN_USER = Config.get("BODEGA_DB_ADMIN_USER", "db.admin.user", "postgres");
+    private static final String ADMIN_PASS = Config.get("BODEGA_DB_ADMIN_PASSWORD", "db.admin.password", null);
+
+    private static final String APP_USER = Config.get("BODEGA_DB_USER", "db.app.user", null);
+    private static final String APP_PASS = Config.get("BODEGA_DB_PASSWORD", "db.app.password", null);
+
+    public static String getUrl() {
+        if (URL_BASE.toLowerCase().contains("sslmode=") || URL_BASE.toLowerCase().contains("ssl=")) return URL_BASE;
+        return URL_BASE + (URL_BASE.contains("?") ? "&" : "?") + "sslmode=" + SSLMODE;
+    }
+
+    public static String getSslMode() { return SSLMODE; }
+
+    public static String getNombreBD() {
+        String s = URL_BASE;
+        int q = s.indexOf('?');
+        if (q >= 0) s = s.substring(0, q);
+        return s.substring(s.lastIndexOf('/') + 1);
+    }
+
+    public static String getHost() {
+        String s = URL_BASE.replaceFirst("^jdbc:postgresql://", "");
+        s = s.substring(0, s.indexOf('/') < 0 ? s.length() : s.indexOf('/'));
+        return s.contains(":") ? s.substring(0, s.indexOf(':')) : s;
+    }
+
+    public static String getPuerto() {
+        String s = URL_BASE.replaceFirst("^jdbc:postgresql://", "");
+        s = s.substring(0, s.indexOf('/') < 0 ? s.length() : s.indexOf('/'));
+        return s.contains(":") ? s.substring(s.indexOf(':') + 1) : "5432";
+    }
+
+    public static boolean hayCuentaAplicacion() {
+        return APP_USER != null && APP_PASS != null && !APP_USER.equalsIgnoreCase(ADMIN_USER);
+    }
+
+    public static String getUsuarioAdmin() { return ADMIN_USER; }
+    public static String getPasswordAdmin() { return ADMIN_PASS; }
+    public static String getUsuarioApp() { return APP_USER; }
+    public static String getPasswordApp() { return APP_PASS; }
+    public static String getUsuario() { return hayCuentaAplicacion() ? APP_USER : ADMIN_USER; }
+    public static String getPassword() { return hayCuentaAplicacion() ? APP_PASS : ADMIN_PASS; }
+
+    private static Connection abrir(String user, String pass) {
         Connection con = null;
         try {
             Class.forName("org.postgresql.Driver");
-            con = DriverManager.getConnection(getUrl(), getUsuario(), getPassword());
+            con = DriverManager.getConnection(getUrl(), user, pass);
         } catch (ClassNotFoundException e) {
-            System.err.println("Driver de PostgreSQL no encontrado: " + e.getMessage());
+            util.Log.error("Driver de PostgreSQL no encontrado", e);
         } catch (SQLException e) {
-            System.err.println("Error al conectar con la base de datos: " + e.getMessage());
+            util.Log.error("No se pudo conectar con la base de datos", e);
         }
         return con;
     }
+
+    public static Connection getConexion() {
+        return abrir(getUsuario(), getPassword());
+    }
+    public static Connection getConexionAdmin() {
+        return abrir(ADMIN_USER, ADMIN_PASS);
+    }
+
     public static void main(String[] args) {
         System.out.println("Probando conexion...");
         if (getConexion() != null) {

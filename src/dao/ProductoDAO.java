@@ -73,7 +73,7 @@ public boolean insertar(Producto p) {
         return ps.executeUpdate() > 0;
 
     } catch (SQLException e) {
-        e.printStackTrace();
+        util.Log.error(e);
         System.err.println("Error al insertar: " + e.getMessage());
         return false;
     }
@@ -119,7 +119,7 @@ public boolean actualizar(Producto p) {
         return ps.executeUpdate() > 0;
 
     } catch (SQLException e) {
-        e.printStackTrace();
+        util.Log.error(e);
         System.err.println("Error al actualizar: " + e.getMessage());
         return false;
     }

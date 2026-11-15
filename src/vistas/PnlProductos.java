@@ -460,6 +460,9 @@ public class PnlProductos extends JPanel {
     }
 
     private void registrarProducto() {
+        if (!util.Permisos.autorizar(this, usuario, util.Permisos.Modulo.PRODUCTOS, "Registrar producto")) {
+            return;
+        }
         if (!validarCampos()) {
             return;
         }
@@ -476,6 +479,7 @@ public class PnlProductos extends JPanel {
 
         boolean ok = productoDAO.insertar(p);
         if (ok) {
+            dao.AuditoriaDAO.registrar(usuario, "Productos", "PRODUCTO_REGISTRADO", p.getNombre());
             JOptionPane.showMessageDialog(this, "Producto registrado correctamente en PostgreSQL.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
             listarProductosEnTabla();
             limpiarFormulario();
@@ -485,6 +489,9 @@ public class PnlProductos extends JPanel {
     }
 
     private void modificarProducto() {
+        if (!util.Permisos.autorizar(this, usuario, util.Permisos.Modulo.PRODUCTOS, "Modificar producto")) {
+            return;
+        }
         if (txtId.getText().trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Seleccione un producto de la tabla.", "Aviso", JOptionPane.WARNING_MESSAGE);
             return;
@@ -505,6 +512,7 @@ public class PnlProductos extends JPanel {
 
         boolean ok = productoDAO.actualizar(p);
         if (ok) {
+            dao.AuditoriaDAO.registrar(usuario, "Productos", "PRODUCTO_MODIFICADO", p.getIdProducto() + " " + p.getNombre());
             JOptionPane.showMessageDialog(this, "Producto actualizado correctamente.", "Actualizado", JOptionPane.INFORMATION_MESSAGE);
             listarProductosEnTabla();
             limpiarFormulario();
@@ -514,6 +522,9 @@ public class PnlProductos extends JPanel {
     }
 
     private void eliminarProducto() {
+        if (!util.Permisos.autorizar(this, usuario, util.Permisos.Modulo.PRODUCTOS, "Eliminar producto")) {
+            return;
+        }
         if (txtId.getText().trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Seleccione un producto para eliminar.", "Aviso", JOptionPane.WARNING_MESSAGE);
             return;
@@ -527,6 +538,7 @@ public class PnlProductos extends JPanel {
             int id = Integer.parseInt(txtId.getText().trim());
             boolean ok = productoDAO.eliminar(id);
             if (ok) {
+                dao.AuditoriaDAO.registrar(usuario, "Productos", "PRODUCTO_ELIMINADO", "id " + id);
                 JOptionPane.showMessageDialog(this, "Producto eliminado correctamente.", "Eliminado", JOptionPane.INFORMATION_MESSAGE);
                 listarProductosEnTabla();
                 limpiarFormulario();
@@ -537,29 +549,24 @@ public class PnlProductos extends JPanel {
     }
 
     private boolean validarCampos() {
-        if (txtNombre.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Ingrese el nombre del producto.", "Campo Obligatorio", JOptionPane.WARNING_MESSAGE);
+        String error = util.Validador.texto(txtNombre.getText(), "Nombre del producto", util.Validador.MAX_NOMBRE, true);
+        if (error != null) {
+            JOptionPane.showMessageDialog(this, error, "Dato no válido", JOptionPane.WARNING_MESSAGE);
             txtNombre.requestFocus();
             return false;
         }
-        try {
-            double pv = Double.parseDouble(txtPrecioVenta.getText().trim().replace(",", "."));
-            if (pv <= 0) {
-                JOptionPane.showMessageDialog(this, "El precio de venta debe ser mayor a 0.", "Precio Inválido", JOptionPane.WARNING_MESSAGE);
-                return false;
-            }
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "El precio de venta debe ser un número válido.", "Formato Inválido", JOptionPane.WARNING_MESSAGE);
-            return false;
+        error = util.Validador.dinero(txtPrecioVenta.getText(), "Precio de venta", false);
+        if (error == null) {
+            error = util.Validador.dinero(txtPrecioCosto.getText(), "Precio de costo", true);
         }
-        try {
-            int stk = Integer.parseInt(txtStock.getText().trim());
-            if (stk < 0) {
-                JOptionPane.showMessageDialog(this, "El stock no puede ser negativo.", "Stock Inválido", JOptionPane.WARNING_MESSAGE);
-                return false;
-            }
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "El stock debe ser un número entero.", "Formato Inválido", JOptionPane.WARNING_MESSAGE);
+        if (error == null) {
+            error = util.Validador.entero(txtStock.getText(), "Stock", true);
+        }
+        if (error == null) {
+            error = util.Validador.entero(txtStockMinimo.getText(), "Stock mínimo", true);
+        }
+        if (error != null) {
+            JOptionPane.showMessageDialog(this, error, "Dato no válido", JOptionPane.WARNING_MESSAGE);
             return false;
         }
         return true;

@@ -9,7 +9,6 @@ import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 
-/** Inicializa las tablas JPA sin borrar los datos que ya existen. */
 public final class JPAUtil {
     private JPAUtil() {}
 
@@ -19,8 +18,8 @@ public final class JPAUtil {
         Map<String, Object> propiedades = new HashMap<>();
         propiedades.put("jakarta.persistence.jdbc.driver", "org.postgresql.Driver");
         propiedades.put("jakarta.persistence.jdbc.url", ConexionBD.getUrl());
-        propiedades.put("jakarta.persistence.jdbc.user", ConexionBD.getUsuario());
-        propiedades.put("jakarta.persistence.jdbc.password", ConexionBD.getPassword());
+        propiedades.put("jakarta.persistence.jdbc.user", ConexionBD.getUsuarioAdmin());
+        propiedades.put("jakarta.persistence.jdbc.password", ConexionBD.getPasswordAdmin());
         propiedades.put("hibernate.hbm2ddl.auto", "update");
 
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("BodegaPU", propiedades);
@@ -28,6 +27,9 @@ public final class JPAUtil {
         restaurarDefaultsPostgreSQL();
         cargarCatalogosIniciales();
         cargarDatosDemostracionIniciales();
+        cifrarContrasenasPendientes();
+        protegerAuditoria();
+        aprovisionarCuentaAplicacion();
         System.out.println("Esquema JPA verificado; las tablas y relaciones faltantes fueron creadas.");
     }
 
@@ -52,7 +54,7 @@ public final class JPAUtil {
             "ALTER TABLE public.ventas ALTER COLUMN cliente SET DEFAULT 'Cliente Mostrador'",
             "ALTER TABLE public.ventas ALTER COLUMN vuelto SET DEFAULT 0.00"
         };
-        try (Connection conexion = ConexionBD.getConexion()) {
+        try (Connection conexion = ConexionBD.getConexionAdmin()) {
             if (conexion == null) throw new IllegalStateException("No se pudo conectar a PostgreSQL para restaurar valores predeterminados.");
             try (Statement sentencia = conexion.createStatement()) {
                 for (String ddl : defaults) sentencia.execute(ddl);
@@ -64,7 +66,7 @@ public final class JPAUtil {
 
     /** Agrega solo catálogos faltantes; nunca duplica ni elimina datos. */
     private static void cargarCatalogosIniciales() {
-        try (Connection conexion = ConexionBD.getConexion()) {
+        try (Connection conexion = ConexionBD.getConexionAdmin()) {
             if (conexion == null) {
                 throw new IllegalStateException("No se pudo conectar a PostgreSQL para cargar los catálogos iniciales.");
             }
@@ -180,7 +182,7 @@ public final class JPAUtil {
                 + "WHERE m.id_producto=p.id_producto AND m.motivo='Carga inicial de demostración')"
         };
 
-        try (Connection conexion = ConexionBD.getConexion()) {
+        try (Connection conexion = ConexionBD.getConexionAdmin()) {
             if (conexion == null) {
                 throw new IllegalStateException("No se pudo conectar a PostgreSQL para cargar los datos iniciales.");
             }
@@ -208,7 +210,7 @@ public final class JPAUtil {
             "DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace WHERE n.nspname='public' AND t.typname='tipo_movimiento') THEN CREATE TYPE public.tipo_movimiento AS ENUM ('Entrada','Venta','Ajuste'); END IF; END $$"
         };
 
-        try (Connection conexion = ConexionBD.getConexion()) {
+        try (Connection conexion = ConexionBD.getConexionAdmin()) {
             if (conexion == null) {
                 throw new IllegalStateException("No se pudo conectar a PostgreSQL. Verifica que el servidor esté encendido y que la base BODEGA_LAPERUANITA exista.");
             }
@@ -217,6 +219,108 @@ public final class JPAUtil {
             }
         } catch (Exception e) {
             throw new IllegalStateException("No se pudo preparar el esquema de PostgreSQL: " + e.getMessage(), e);
+        }
+    }
+
+    // =====================================================================
+    //  Seguridad de la base de datos
+    // =====================================================================
+
+    /** Cifra (PBKDF2 + sal) cualquier contraseña que aún esté en texto plano. Se ejecuta en cada inicio. */
+    private static void cifrarContrasenasPendientes() {
+        try (Connection conexion = ConexionBD.getConexionAdmin()) {
+            if (conexion == null) throw new IllegalStateException("No se pudo conectar para cifrar contraseñas.");
+            java.util.List<Object[]> pendientes = new java.util.ArrayList<>();
+            try (Statement st = conexion.createStatement();
+                 java.sql.ResultSet rs = st.executeQuery("SELECT id_usuario, password FROM public.usuarios")) {
+                while (rs.next()) {
+                    String p = rs.getString(2);
+                    if (!util.Seguridad.esHash(p)) pendientes.add(new Object[] { rs.getInt(1), p });
+                }
+            }
+            if (pendientes.isEmpty()) return;
+            conexion.setAutoCommit(false);
+            try (PreparedStatement ps = conexion.prepareStatement(
+                    "UPDATE public.usuarios SET password = ? WHERE id_usuario = ?")) {
+                for (Object[] f : pendientes) {
+                    ps.setString(1, util.Seguridad.hashear((String) f[1]));
+                    ps.setInt(2, (Integer) f[0]);
+                    ps.executeUpdate();
+                }
+                conexion.commit();
+            } catch (SQLException e) {
+                conexion.rollback();
+                throw e;
+            }
+            System.out.println("Contraseñas cifradas: " + pendientes.size());
+        } catch (SQLException e) {
+            throw new IllegalStateException("No se pudieron cifrar las contraseñas: " + e.getMessage(), e);
+        }
+    }
+
+    /** La tabla de auditoría es de solo lectura: ni UPDATE, ni DELETE, ni TRUNCATE (ni siquiera el dueño sin quitar el trigger). */
+    private static void protegerAuditoria() {
+        String[] ddl = {
+            "CREATE OR REPLACE FUNCTION public.auditoria_solo_lectura() RETURNS trigger AS $f$ "
+                + "BEGIN RAISE EXCEPTION 'El registro de auditoria es de solo lectura'; END; $f$ LANGUAGE plpgsql",
+            "DROP TRIGGER IF EXISTS trg_auditoria_solo_lectura ON public.auditoria",
+            "CREATE TRIGGER trg_auditoria_solo_lectura BEFORE UPDATE OR DELETE ON public.auditoria "
+                + "FOR EACH ROW EXECUTE FUNCTION public.auditoria_solo_lectura()",
+            "DROP TRIGGER IF EXISTS trg_auditoria_sin_truncate ON public.auditoria",
+            "CREATE TRIGGER trg_auditoria_sin_truncate BEFORE TRUNCATE ON public.auditoria "
+                + "FOR EACH STATEMENT EXECUTE FUNCTION public.auditoria_solo_lectura()"
+        };
+        try (Connection conexion = ConexionBD.getConexionAdmin()) {
+            if (conexion == null) throw new IllegalStateException("No se pudo conectar para proteger la auditoría.");
+            try (Statement st = conexion.createStatement()) {
+                for (String s : ddl) st.execute(s);
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("No se pudo proteger la auditoría: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Crea (si falta) la cuenta dedicada de la aplicación con PRIVILEGIOS MÍNIMOS:
+     * solo SELECT/INSERT/UPDATE sobre las tablas (sin DELETE, sin DROP/ALTER/CREATE); la auditoría solo admite
+     * SELECT e INSERT. Así un DROP TABLE o ALTER TABLE con esa cuenta es rechazado por PostgreSQL.
+     */
+    private static void aprovisionarCuentaAplicacion() {
+        if (!ConexionBD.hayCuentaAplicacion()) {
+            util.Log.info("No hay cuenta de aplicación configurada (db.app.user / db.app.password): "
+                    + "se usa la cuenta administradora. Configure una cuenta dedicada.");
+            return;
+        }
+        String usuario = ConexionBD.getUsuarioApp();
+        String clave = ConexionBD.getPasswordApp();
+        if (!usuario.matches("[A-Za-z0-9_]{1,63}")) {
+            throw new IllegalStateException("El nombre de la cuenta de aplicación no es válido.");
+        }
+        String bd = ConexionBD.getNombreBD();
+        if (!bd.matches("[A-Za-z0-9_]{1,63}")) {
+            throw new IllegalStateException("El nombre de la base de datos no es válido.");
+        }
+        String claveSql = clave.replace("'", "''");
+        try (Connection conexion = ConexionBD.getConexionAdmin()) {
+            if (conexion == null) throw new IllegalStateException("No se pudo conectar para crear la cuenta de aplicación.");
+            boolean existe;
+            try (PreparedStatement ps = conexion.prepareStatement("SELECT 1 FROM pg_roles WHERE rolname = ?")) {
+                ps.setString(1, usuario);
+                try (java.sql.ResultSet rs = ps.executeQuery()) { existe = rs.next(); }
+            }
+            try (Statement st = conexion.createStatement()) {
+                st.execute((existe ? "ALTER ROLE " : "CREATE ROLE ") + "\"" + usuario + "\" LOGIN PASSWORD '"
+                        + claveSql + "' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION");
+                st.execute("GRANT CONNECT ON DATABASE \"" + bd + "\" TO \"" + usuario + "\"");
+                st.execute("GRANT USAGE ON SCHEMA public TO \"" + usuario + "\"");
+                st.execute("REVOKE CREATE ON SCHEMA public FROM \"" + usuario + "\"");
+                st.execute("REVOKE ALL ON ALL TABLES IN SCHEMA public FROM \"" + usuario + "\"");
+                st.execute("GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA public TO \"" + usuario + "\"");
+                st.execute("REVOKE UPDATE ON public.auditoria FROM \"" + usuario + "\"");
+                st.execute("GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA public TO \"" + usuario + "\"");
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("No se pudo configurar la cuenta de la aplicación: " + e.getMessage(), e);
         }
     }
 }

@@ -1,10 +1,13 @@
 package vistas;
 
 import conexion.ConexionBD;
+import dao.AuditoriaDAO;
 import dao.InventarioDAO;
+import dao.UsuarioDAO;
 import dao.ReporteDAO;
 import modelo.Usuario;
 import util.InactividadSesion;
+import util.Permisos;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -32,8 +35,6 @@ public class FrmPrincipal extends javax.swing.JFrame {
 
     private final Usuario usuarioLogueado;
     private final boolean esCajero;
-
-    // Logo (src/img/logo.png). Si no se encuentra, se usa el ícono dibujado.
     private final BufferedImage logoImg = cargarLogo();
 
     // Contenido central
@@ -61,6 +62,8 @@ public class FrmPrincipal extends javax.swing.JFrame {
     private Timer timerReloj;
     private Timer timerBD;
     private InactividadSesion inactividad;
+    private PnlSeguridad pnlSeguridad;
+    private Timer timerSesion;
 
     private final SimpleDateFormat fmtHora = new SimpleDateFormat("HH:mm:ss");
     private final SimpleDateFormat fmtFecha = new SimpleDateFormat("EEEE, d 'de' MMMM yyyy",
@@ -94,6 +97,7 @@ public class FrmPrincipal extends javax.swing.JFrame {
         INFO.put("caja", new String[] { "Control de Caja", "Apertura, arqueo y cierre de caja" });
         INFO.put("reportes", new String[] { "Reportes", "Indicadores de ventas y exportación a Excel" });
         INFO.put("usuarios", new String[] { "Usuarios", "Administración de usuarios y accesos" });
+        INFO.put("seguridad", new String[] { "Seguridad", "Auditoría, respaldos e integridad del sistema" });
     }
 
     public FrmPrincipal(Usuario usuario) {
@@ -124,6 +128,8 @@ public class FrmPrincipal extends javax.swing.JFrame {
                     w.dispose(); // cierra diálogos abiertos
                 }
             }
+            AuditoriaDAO.registrar(usuarioLogueado, "Autenticación", "CIERRE_SESION_INACTIVIDAD",
+                    InactividadSesion.MINUTOS + " min sin actividad");
             JOptionPane.showMessageDialog(null,
                     "Su sesión se cerró por " + InactividadSesion.MINUTOS
                             + " minutos de inactividad.",
@@ -132,6 +138,10 @@ public class FrmPrincipal extends javax.swing.JFrame {
             dispose();
         });
         inactividad.iniciar();
+        iniciarVigilanciaSesion();
+        if (!esCajero) {
+            util.RespaldoBD.iniciarRespaldoPeriodico(usuarioLogueado);
+        }
 
         // El administrador inicia en el dashboard; el cajero entra directo al POS.
         irA(esCajero ? "ventas" : "inicio");
@@ -308,13 +318,14 @@ public class FrmPrincipal extends javax.swing.JFrame {
         // Módulos disponibles
         agregarBoton(pnlMenu, "ventas", "Nueva Venta (POS)", "carrito", true);
         agregarBoton(pnlMenu, "productos", "Catálogo Productos", "paquete", true);
-        agregarBoton(pnlMenu, "inventario", "Inventario / Stock", "kardex", true);
+       agregarBoton(pnlMenu, "inventario", "Inventario / Stock", "kardex", true);
         agregarBoton(pnlMenu, "caja", "Control de Caja", "caja", true);
-        agregarBoton(pnlMenu, "reportes", "Reportes", "reporte", true);
+       agregarBoton(pnlMenu, "reportes", "Reportes", "reporte", true);
 
         // Usuarios: solamente para el administrador
         if (!esCajero) {
             agregarBoton(pnlMenu, "usuarios", "Usuarios", "usuarios", true);
+            agregarBoton(pnlMenu, "seguridad", "Seguridad", "usuarios", true);
         }
 
         pnlMenu.add(Box.createVerticalGlue());
@@ -449,6 +460,7 @@ public class FrmPrincipal extends javax.swing.JFrame {
         pnlInventario = new PnlInventario(usuarioLogueado);
         pnlControlCaja = new PnlControlCaja(usuarioLogueado);
         pnlReportes = new PnlReportes();
+        pnlReportes.setUsuario(usuarioLogueado);
         pnlUsuarios = new PnlUsuarios(usuarioLogueado);
 
         pnlContenido.add(pnlDashboard, "inicio");
@@ -458,6 +470,10 @@ public class FrmPrincipal extends javax.swing.JFrame {
         pnlContenido.add(pnlControlCaja, "caja");
         pnlContenido.add(pnlReportes, "reportes");
         pnlContenido.add(pnlUsuarios, "usuarios");
+        if (!esCajero) {
+            pnlSeguridad = new PnlSeguridad(usuarioLogueado);
+            pnlContenido.add(pnlSeguridad, "seguridad");
+        }
 
         return pnlContenido;
     }
@@ -489,6 +505,11 @@ public class FrmPrincipal extends javax.swing.JFrame {
             return;
         }
 
+        Permisos.Modulo modulo = moduloDe(clave);
+        if (modulo != null && !Permisos.autorizar(this, usuarioLogueado, modulo, "Abrir módulo " + clave)) {
+            return;
+        }
+
         switch (clave) {
             case "inicio":
                 refrescarDashboard();
@@ -505,11 +526,27 @@ public class FrmPrincipal extends javax.swing.JFrame {
             case "usuarios":
                 pnlUsuarios.refrescarUsuarios();
                 break;
+            case "seguridad":
+                if (pnlSeguridad != null) pnlSeguridad.refrescarDatos();
+                break;
             default:
                 break;
         }
 
         seleccionarModulo(clave);
+    }
+
+    private static Permisos.Modulo moduloDe(String clave) {
+        switch (clave) {
+            case "ventas": return Permisos.Modulo.VENTAS;
+            case "productos": return Permisos.Modulo.PRODUCTOS;
+            case "caja": return Permisos.Modulo.CAJA;
+            case "inventario": return Permisos.Modulo.INVENTARIO;
+            case "reportes": return Permisos.Modulo.REPORTES;
+            case "usuarios": return Permisos.Modulo.USUARIOS;
+            case "seguridad": return Permisos.Modulo.SEGURIDAD;
+            default: return null; // inicio (dashboard) solo existe para el administrador
+        }
     }
 
     private void seleccionarModulo(String clave) {
@@ -530,6 +567,7 @@ public class FrmPrincipal extends javax.swing.JFrame {
         int opc = JOptionPane.showConfirmDialog(this,
                 "¿Está seguro de cerrar sesión?", "Salir", JOptionPane.YES_NO_OPTION);
         if (opc == JOptionPane.YES_OPTION) {
+            AuditoriaDAO.registrar(usuarioLogueado, "Autenticación", "CIERRE_SESION", "Cierre manual");
             new FrmLogin().setVisible(true);
             this.dispose();
         }
@@ -902,8 +940,99 @@ public class FrmPrincipal extends javax.swing.JFrame {
         }.execute();
     }
 
+    private boolean sesionCerrada = false;
+    private boolean mostrandoAlertas = false;
+
+    /**
+     * Vigila la sesión cada 15 s: (1) si un administrador desactivó la cuenta o cambió su rol,
+     * la sesión se cierra aunque siga abierta; (2) al administrador se le muestran las alertas
+     * de seguridad (p. ej. cuentas bloqueadas por intentos fallidos).
+     */
+    private void iniciarVigilanciaSesion() {
+        Permisos.setAlSesionInvalida(this::cerrarSesionForzada);
+        timerSesion = new Timer(15000, e -> verificarSesionYAlertas());
+        timerSesion.setInitialDelay(3000);
+        timerSesion.start();
+    }
+
+    private void verificarSesionYAlertas() {
+        if (sesionCerrada || usuarioLogueado == null) {
+            return;
+        }
+        new SwingWorker<Object[], Void>() {
+            @Override
+            protected Object[] doInBackground() {
+                String[] ra = new UsuarioDAO().obtenerRolYEstado(usuarioLogueado.getIdUsuario());
+                List<Object[]> alertas = (esCajero || ra == null)
+                        ? new ArrayList<Object[]>() : new AuditoriaDAO().alertasPendientes();
+                return new Object[] { ra, alertas };
+            }
+
+            @Override
+            @SuppressWarnings("unchecked")
+            protected void done() {
+                try {
+                    Object[] r = get();
+                    String[] ra = (String[]) r[0];
+                    if (ra != null) {
+                        if (!"Activo".equalsIgnoreCase(ra[1])) {
+                            cerrarSesionForzada();
+                            return;
+                        }
+                        if (!ra[0].equalsIgnoreCase(usuarioLogueado.getRol())) {
+                            AuditoriaDAO.registrar(usuarioLogueado, "Autenticación",
+                                    "CIERRE_SESION_CAMBIO_ROL", "Rol en BD: " + ra[0]);
+                            cerrarSesionPorMensaje("Sus permisos fueron modificados.\nInicie sesión nuevamente.");
+                            return;
+                        }
+                    }
+                    List<Object[]> alertas = (List<Object[]>) r[1];
+                    if (!alertas.isEmpty() && !mostrandoAlertas && !esCajero) {
+                        mostrandoAlertas = true;
+                        StringBuilder sb = new StringBuilder("ALERTAS DE SEGURIDAD\n\n");
+                        AuditoriaDAO dao = new AuditoriaDAO();
+                        for (Object[] a : alertas) {
+                            sb.append("• ").append(a[1]).append(" - ").append(a[4]).append("\n");
+                            dao.marcarAtendida((Integer) a[0]);
+                        }
+                        JOptionPane.showMessageDialog(FrmPrincipal.this, sb.toString(),
+                                "Alerta al administrador", JOptionPane.WARNING_MESSAGE);
+                        mostrandoAlertas = false;
+                    }
+                } catch (Exception ex) {
+                    util.Log.error("Vigilancia de sesión", ex);
+                }
+            }
+        }.execute();
+    }
+
+    private void cerrarSesionForzada() {
+        AuditoriaDAO.registrar(usuarioLogueado, "Autenticación", "CIERRE_SESION_CUENTA_DESACTIVADA",
+                "La cuenta fue desactivada con la sesión abierta");
+        cerrarSesionPorMensaje("Su cuenta fue desactivada por un administrador.\nSe cerró su sesión.");
+    }
+
+    private void cerrarSesionPorMensaje(String mensaje) {
+        if (sesionCerrada) {
+            return;
+        }
+        sesionCerrada = true;
+        for (java.awt.Window w : java.awt.Window.getWindows()) {
+            if (w != this && w.isDisplayable()) {
+                w.dispose();
+            }
+        }
+        JOptionPane.showMessageDialog(null, mensaje, "Sesión cerrada", JOptionPane.WARNING_MESSAGE);
+        new FrmLogin().setVisible(true);
+        dispose();
+    }
+
     @Override
     public void dispose() {
+        if (timerSesion != null) {
+            timerSesion.stop();
+        }
+        Permisos.setAlSesionInvalida(null);
         if (inactividad != null) {
             inactividad.detener();
         }

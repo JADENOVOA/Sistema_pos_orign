@@ -300,6 +300,10 @@ public class PnlControlCaja extends JPanel {
 
         private void abrirCaja() {
 
+                if (!util.Permisos.autorizar(this, usuario, util.Permisos.Modulo.CAJA, "Abrir caja")) {
+                        return;
+                }
+
                 String entrada = JOptionPane.showInputDialog(
                                 this,
                                 "Ingrese el monto inicial de caja:",
@@ -310,19 +314,22 @@ public class PnlControlCaja extends JPanel {
                         return;
                 }
 
+                String errorMonto = util.Validador.dinero(entrada, "Monto inicial", true);
+
+                if (errorMonto != null) {
+
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        errorMonto,
+                                        "Dato no válido",
+                                        JOptionPane.WARNING_MESSAGE);
+
+                        return;
+                }
+
                 try {
 
-                        double montoInicial = Double.parseDouble(
-                                        entrada.replace(",", "."));
-
-                        if (montoInicial < 0) {
-
-                                JOptionPane.showMessageDialog(
-                                                this,
-                                                "El monto no puede ser negativo.");
-
-                                return;
-                        }
+                        double montoInicial = util.Validador.aDouble(entrada);
 
                         Caja nuevaCaja = new Caja(
                                         usuario.getIdUsuario(),
@@ -332,6 +339,10 @@ public class PnlControlCaja extends JPanel {
                                         nuevaCaja);
 
                         if (idCaja > 0) {
+
+                                dao.AuditoriaDAO.registrar(usuario, "Caja", "APERTURA_CAJA",
+                                                "Caja " + idCaja + ", monto inicial S/. "
+                                                                + String.format("%.2f", montoInicial));
 
                                 JOptionPane.showMessageDialog(
                                                 this,
@@ -360,6 +371,10 @@ public class PnlControlCaja extends JPanel {
                         return;
                 }
 
+                if (!util.Permisos.autorizar(this, usuario, util.Permisos.Modulo.CAJA, "Cerrar caja")) {
+                        return;
+                }
+
                 double efectivo = cajaDAO.obtenerTotalEfectivo(
                                 cajaAbierta.getIdCaja());
 
@@ -383,10 +398,22 @@ public class PnlControlCaja extends JPanel {
                         return;
                 }
 
+                String errorReal = util.Validador.dinero(entrada, "Efectivo real", true);
+
+                if (errorReal != null) {
+
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        errorReal,
+                                        "Dato no válido",
+                                        JOptionPane.WARNING_MESSAGE);
+
+                        return;
+                }
+
                 try {
 
-                        double montoReal = Double.parseDouble(
-                                        entrada.replace(",", "."));
+                        double montoReal = util.Validador.aDouble(entrada);
 
                         double diferencia = montoReal - esperado;
 
@@ -403,6 +430,10 @@ public class PnlControlCaja extends JPanel {
                                         observacion);
 
                         if (exito) {
+
+                                dao.AuditoriaDAO.registrar(usuario, "Caja", "CIERRE_CAJA",
+                                                "Caja " + cajaAbierta.getIdCaja() + ", diferencia S/. "
+                                                                + String.format("%.2f", diferencia));
 
                                 JOptionPane.showMessageDialog(
                                                 this,

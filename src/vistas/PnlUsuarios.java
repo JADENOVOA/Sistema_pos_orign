@@ -254,6 +254,10 @@ public class PnlUsuarios extends JPanel {
 
         private void mostrarFormularioNuevo() {
 
+                if (!util.Permisos.autorizar(this, usuarioLogueado, util.Permisos.Modulo.USUARIOS, "Crear usuario")) {
+                        return;
+                }
+
                 JTextField txtNombre = new JTextField();
                 JTextField txtUsuario = new JTextField();
                 JPasswordField txtPassword = new JPasswordField();
@@ -295,6 +299,18 @@ public class PnlUsuarios extends JPanel {
                         return;
                 }
 
+                String errorDatos = util.Validador.texto(nombre, "Nombre completo", util.Validador.MAX_NOMBRE, true);
+                if (errorDatos == null) {
+                        errorDatos = util.Validador.usuario(usuario);
+                }
+                if (errorDatos == null) {
+                        errorDatos = util.Validador.password(password);
+                }
+                if (errorDatos != null) {
+                        JOptionPane.showMessageDialog(this, errorDatos, "Dato no válido", JOptionPane.WARNING_MESSAGE);
+                        return;
+                }
+
                 if (!util.ValidadorPassword.esSegura(password)) {
 
                         JOptionPane.showMessageDialog(
@@ -325,6 +341,9 @@ public class PnlUsuarios extends JPanel {
 
                 if (usuarioDAO.insertar(nuevo)) {
 
+                        dao.AuditoriaDAO.registrar(usuarioLogueado, "Usuarios", "USUARIO_CREADO",
+                                        "Usuario " + usuario + " (" + nuevo.getRol() + ")");
+
                         JOptionPane.showMessageDialog(
                                         this,
                                         "Usuario registrado correctamente.");
@@ -340,6 +359,10 @@ public class PnlUsuarios extends JPanel {
         }
 
         private void editarUsuarioSeleccionado() {
+
+                if (!util.Permisos.autorizar(this, usuarioLogueado, util.Permisos.Modulo.USUARIOS, "Editar usuario")) {
+                        return;
+                }
 
                 int filaVista = tblUsuarios.getSelectedRow();
 
@@ -426,6 +449,30 @@ public class PnlUsuarios extends JPanel {
                         return;
                 }
 
+                String errorDatos = util.Validador.texto(u.getNombreCompleto(), "Nombre completo",
+                                util.Validador.MAX_NOMBRE, true);
+                if (errorDatos == null) {
+                        errorDatos = util.Validador.usuario(u.getUsuario());
+                }
+                if (errorDatos == null) {
+                        errorDatos = util.Validador.password(u.getPassword());
+                }
+                if (errorDatos != null) {
+                        JOptionPane.showMessageDialog(this, errorDatos, "Dato no válido", JOptionPane.WARNING_MESSAGE);
+                        return;
+                }
+
+                if (usuarioDAO.existeOtroUsuario(u.getUsuario(), idUsuario)) {
+                        JOptionPane.showMessageDialog(this, "Ese nombre de usuario ya existe.");
+                        return;
+                }
+
+                // Bloqueo de usuarios: no puede desactivarse/quitarse el rol a sí mismo ni al último administrador activo
+                if (!mensajeSiCambioNoPermitido(usuarioDAO.validarCambioUsuario(
+                                idUsuario, u.getRol(), u.getEstado(), usuarioLogueado.getIdUsuario()))) {
+                        return;
+                }
+
                 if (!util.ValidadorPassword.esSegura(u.getPassword())) {
 
                         JOptionPane.showMessageDialog(
@@ -438,6 +485,9 @@ public class PnlUsuarios extends JPanel {
                 }
 
                 if (usuarioDAO.actualizar(u)) {
+
+                        dao.AuditoriaDAO.registrar(usuarioLogueado, "Usuarios", "USUARIO_MODIFICADO",
+                                        "Usuario " + u.getUsuario() + " (" + u.getRol() + ", " + u.getEstado() + ")");
 
                         JOptionPane.showMessageDialog(
                                         this,
@@ -453,7 +503,35 @@ public class PnlUsuarios extends JPanel {
                 }
         }
 
+        /** Muestra el motivo si el cambio no está permitido. @return true si el cambio puede continuar. */
+        private boolean mensajeSiCambioNoPermitido(UsuarioDAO.ResultadoCambio r) {
+                switch (r) {
+                        case OK:
+                                return true;
+                        case PROPIA_CUENTA:
+                                JOptionPane.showMessageDialog(this,
+                                                "No puede desactivar su propia cuenta ni quitarse el rol de Administrador.",
+                                                "Operación no permitida", JOptionPane.WARNING_MESSAGE);
+                                return false;
+                        case ULTIMO_ADMIN:
+                                JOptionPane.showMessageDialog(this,
+                                                "Debe existir al menos un Administrador activo.\n"
+                                                                + "No se puede desactivar al último administrador.",
+                                                "Operación no permitida", JOptionPane.WARNING_MESSAGE);
+                                return false;
+                        default:
+                                JOptionPane.showMessageDialog(this, util.Log.MENSAJE_GENERICO,
+                                                "Error", JOptionPane.ERROR_MESSAGE);
+                                return false;
+                }
+        }
+
         private void cambiarEstadoSeleccionado() {
+
+                if (!util.Permisos.autorizar(this, usuarioLogueado, util.Permisos.Modulo.USUARIOS,
+                                "Cambiar estado de usuario")) {
+                        return;
+                }
 
                 int filaVista = tblUsuarios.getSelectedRow();
 
@@ -481,16 +559,23 @@ public class PnlUsuarios extends JPanel {
                                                 ? "Inactivo"
                                                 : "Activo";
 
-                if (usuarioDAO.cambiarEstado(
+                UsuarioDAO.ResultadoCambio resultado = usuarioDAO.cambiarEstado(
                                 idUsuario,
-                                nuevoEstado)) {
+                                nuevoEstado,
+                                usuarioLogueado.getIdUsuario());
 
-                        JOptionPane.showMessageDialog(
-                                        this,
-                                        "Estado actualizado a "
-                                                        + nuevoEstado);
-
-                        refrescarUsuarios();
+                if (!mensajeSiCambioNoPermitido(resultado)) {
+                        return;
                 }
+
+                dao.AuditoriaDAO.registrar(usuarioLogueado, "Usuarios", "USUARIO_ESTADO_CAMBIADO",
+                                "Usuario id " + idUsuario + " -> " + nuevoEstado);
+
+                JOptionPane.showMessageDialog(
+                                this,
+                                "Estado actualizado a "
+                                                + nuevoEstado);
+
+                refrescarUsuarios();
         }
 }

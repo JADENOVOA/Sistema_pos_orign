@@ -189,7 +189,7 @@ public class ExportarExcel {
             System.err.println(
                 "Error al exportar productos más vendidos: " + e.getMessage()
             );
-            e.printStackTrace();
+            util.Log.error(e);
             return false;
         }
     }
@@ -352,7 +352,7 @@ public class ExportarExcel {
             System.err.println(
                 "Error al exportar métodos de pago: " + e.getMessage()
             );
-            e.printStackTrace();
+            util.Log.error(e);
             return false;
         }
     }

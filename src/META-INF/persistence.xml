@@ -13,6 +13,8 @@
         <class>entidades.VentaEntity</class>
         <class>entidades.DetalleVentaEntity</class>
         <class>entidades.MovimientoInventarioEntity</class>
+        <class>entidades.AuditoriaEntity</class>
+        <class>entidades.AlertaSeguridadEntity</class>
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
         <properties>
             <property name="hibernate.hbm2ddl.auto" value="update"/>

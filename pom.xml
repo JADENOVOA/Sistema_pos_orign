@@ -24,7 +24,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.7.13</version>
+            <version>42.7.14</version>
         </dependency>
         <dependency>
             <groupId>org.apache.poi</groupId>
@@ -37,6 +37,29 @@
             <version>2.24.3</version>
         </dependency>
     </dependencies>
+
+    <profiles>
+        <!-- Auditoría de dependencias (caso 14): .\mvnw.cmd -Pseguridad verify  -> target/dependency-check-report.html -->
+        <profile>
+            <id>seguridad</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.owasp</groupId>
+                        <artifactId>dependency-check-maven</artifactId>
+                        <version>12.1.3</version>
+                        <configuration>
+                            <failBuildOnCVSS>9</failBuildOnCVSS>
+                            <formats><format>HTML</format></formats>
+                        </configuration>
+                        <executions>
+                            <execution><goals><goal>check</goal></goals></execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
     <build>
         <sourceDirectory>src</sourceDirectory>

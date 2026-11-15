@@ -821,6 +821,11 @@ public class PnlNuevaVenta extends JPanel {
 
     private void procesarCobroVenta() {
 
+        // El permiso y el estado de la cuenta se validan al cobrar (una cuenta desactivada no puede vender)
+        if (!util.Permisos.autorizar(this, usuario, util.Permisos.Modulo.VENTAS, "Registrar venta")) {
+            return;
+        }
+
         if (modCarrito.getRowCount() == 0) {
 
             JOptionPane.showMessageDialog(
@@ -835,11 +840,23 @@ public class PnlNuevaVenta extends JPanel {
         double recibido = 0.0;
         double vuelto = 0.0;
 
+        String errorMonto = util.Validador.dinero(txtMontoRecibido.getText(), "Monto recibido", false);
+
+        if (errorMonto != null) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    errorMonto,
+                    "Dato no válido",
+                    JOptionPane.WARNING_MESSAGE);
+
+            return;
+        }
+
         try {
 
-            recibido = Double.parseDouble(
-                    txtMontoRecibido.getText()
-                            .trim().replace(",", "."));
+            recibido = util.Validador.aDouble(
+                    txtMontoRecibido.getText());
 
             if (recibido < totalCalculado) {
 
@@ -869,6 +886,19 @@ public class PnlNuevaVenta extends JPanel {
 
         if (cliente.isEmpty()) {
             cliente = "Cliente Mostrador";
+        }
+
+        String errorCliente = util.Validador.texto(cliente, "Cliente", util.Validador.MAX_TEXTO, true);
+
+        if (errorCliente != null) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    errorCliente,
+                    "Dato no válido",
+                    JOptionPane.WARNING_MESSAGE);
+
+            return;
         }
 
         Venta v = new Venta();
@@ -947,6 +977,10 @@ public class PnlNuevaVenta extends JPanel {
 
         if (exito) {
 
+            dao.AuditoriaDAO.registrar(usuario, "Ventas", "VENTA_REGISTRADA",
+                    v.getNumeroTicket() + " total S/. " + String.format("%.2f", v.getTotal())
+                            + " (" + v.getMetodoPago() + ")");
+
             mostrarTicket(v);
 
             limpiarCarrito();
@@ -956,8 +990,8 @@ public class PnlNuevaVenta extends JPanel {
 
             JOptionPane.showMessageDialog(
                     this,
-                    "Error al registrar la venta en PostgreSQL.",
-                    "Error",
+                    ventaDAO.getMensajeError(),
+                    "No se registró la venta",
                     JOptionPane.ERROR_MESSAGE);
         }
     }

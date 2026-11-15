@@ -74,7 +74,7 @@ public class InventarioDAO {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            util.Log.error(e);
         }
 
         return lista;
@@ -166,7 +166,7 @@ public class InventarioDAO {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            util.Log.error(e);
         }
 
         return lista;
@@ -192,7 +192,7 @@ public class InventarioDAO {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            util.Log.error(e);
         }
 
         return 0;
@@ -219,7 +219,7 @@ public class InventarioDAO {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            util.Log.error(e);
         }
 
         return 0;
@@ -247,7 +247,7 @@ public class InventarioDAO {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            util.Log.error(e);
         }
 
         return 0.0;
@@ -350,11 +350,11 @@ public class InventarioDAO {
                 try {
                     con.rollback();
                 } catch (SQLException ex) {
-                    ex.printStackTrace();
+                    util.Log.error(ex);
                 }
             }
 
-            e.printStackTrace();
+            util.Log.error(e);
 
             return false;
 
@@ -364,7 +364,7 @@ public class InventarioDAO {
                 try {
                     con.close();
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    util.Log.error(e);
                 }
             }
         }

@@ -91,20 +91,16 @@ public class PnlInventario extends JPanel {
         COLOR_VERDE
 );
 
-btnIngreso.addActionListener(
-        e -> ingresarMercaderiaSeleccionada()
-);
-
         btnIngreso.addActionListener(e -> ingresarMercaderiaSeleccionada());
-
+if (usuario != null && !util.Permisos.permite(usuario.getRol(), util.Permisos.Modulo.INVENTARIO_EDICION)) {
+    btnIngreso.setEnabled(false);
+    btnIngreso.setToolTipText("Solo el Administrador puede modificar el inventario");
+}
         pnlCabecera.add(pnlTitulos, BorderLayout.WEST);
         pnlCabecera.add(btnIngreso, BorderLayout.EAST);
 
         add(pnlCabecera, BorderLayout.NORTH);
 
-        // ===========================
-        // CENTRO GENERAL
-        // ===========================
 
         JPanel pnlCentro = new JPanel(new BorderLayout(0, 14));
         pnlCentro.setBackground(COLOR_FONDO);
@@ -570,6 +566,10 @@ btnIngreso.addActionListener(
 
     private void ingresarMercaderiaSeleccionada() {
 
+        if (!util.Permisos.autorizar(this, usuario, util.Permisos.Modulo.INVENTARIO_EDICION, "Ingresar mercadería")) {
+            return;
+        }
+
         int filaVista =
                 tblStock.getSelectedRow();
 
@@ -620,20 +620,24 @@ btnIngreso.addActionListener(
 
         try {
 
-            int cantidad =
-                    Integer.parseInt(
-                            cantidadTexto.trim()
-                    );
+            String errorCantidad = util.Validador.entero(cantidadTexto, "Cantidad", false);
 
-            if (cantidad <= 0) {
+            if (errorCantidad != null) {
 
                 JOptionPane.showMessageDialog(
                         this,
-                        "La cantidad debe ser mayor a 0."
+                        errorCantidad,
+                        "Dato no válido",
+                        JOptionPane.WARNING_MESSAGE
                 );
 
                 return;
             }
+
+            int cantidad =
+                    Integer.parseInt(
+                            cantidadTexto.trim()
+                    );
 
             String motivo =
                     JOptionPane.showInputDialog(
@@ -649,6 +653,20 @@ btnIngreso.addActionListener(
                         "Reposición de mercadería";
             }
 
+            String errorMotivo = util.Validador.texto(motivo, "Motivo", util.Validador.MAX_TEXTO, false);
+
+            if (errorMotivo != null) {
+
+                JOptionPane.showMessageDialog(
+                        this,
+                        errorMotivo,
+                        "Dato no válido",
+                        JOptionPane.WARNING_MESSAGE
+                );
+
+                return;
+            }
+
             boolean ok =
                     inventarioDAO.ingresarStock(
                             idProducto,
@@ -658,6 +676,9 @@ btnIngreso.addActionListener(
                     );
 
             if (ok) {
+
+                dao.AuditoriaDAO.registrar(usuario, "Inventario", "AJUSTE_INVENTARIO",
+                        producto + ": +" + cantidad + " (" + motivo.trim() + ")");
 
                 JOptionPane.showMessageDialog(
                         this,

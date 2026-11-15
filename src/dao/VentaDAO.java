@@ -11,6 +11,36 @@ import java.sql.Statement;
 
 public class VentaDAO {
 
+    private String mensajeError = util.Log.MENSAJE_GENERICO;
+
+    /** Mensaje seguro (sin detalles internos) para mostrar al usuario si la venta no se registró. */
+    public String getMensajeError() {
+        return mensajeError;
+    }
+
+    private static boolean importeValido(double d) {
+        return !Double.isNaN(d) && !Double.isInfinite(d) && d >= 0 && d <= 99_999.99;
+    }
+
+    /** Defensa en profundidad: la venta se valida también aquí, no solo en la pantalla. */
+    private String validarVenta(Venta venta) {
+        if (venta.getDetalles() == null || venta.getDetalles().isEmpty()) return "La venta no tiene productos.";
+        if (!importeValido(venta.getTotal()) || venta.getTotal() <= 0
+                || !importeValido(venta.getSubtotal()) || !importeValido(venta.getIgv())
+                || !importeValido(venta.getMontoRecibido()) || !importeValido(venta.getVuelto())) {
+            return "Los importes de la venta no son válidos.";
+        }
+        if (venta.getMontoRecibido() + 0.005 < venta.getTotal()) return "El monto recibido es menor al total.";
+        for (DetalleVenta d : venta.getDetalles()) {
+            if (d.getIdProducto() <= 0 || d.getCantidad() <= 0 || d.getCantidad() > 99_999
+                    || !importeValido(d.getPrecioUnitario()) || d.getPrecioUnitario() <= 0
+                    || !importeValido(d.getSubtotal())) {
+                return "Hay productos con cantidad o precio no válidos.";
+            }
+        }
+        return null;
+    }
+
     // Registra la venta y descuenta stock en una sola transacción atómica (RF01 y RF02)
     public boolean registrarVenta(Venta venta) {
         String sqlVenta = "INSERT INTO ventas (numero_ticket, id_caja, id_usuario, cliente, subtotal, igv, total, metodo_pago, monto_recibido, vuelto) "
@@ -24,9 +54,19 @@ public class VentaDAO {
         String sqlMovimiento = "INSERT INTO movimientos_inventario (id_producto, id_usuario, tipo, cantidad, stock_anterior, stock_posterior, motivo) "
                 + "VALUES (?, ?, 'Venta'::tipo_movimiento, ?, ?, ?, ?)";
 
+        mensajeError = util.Log.MENSAJE_GENERICO;
+        String errorValidacion = validarVenta(venta);
+        if (errorValidacion != null) {
+            mensajeError = errorValidacion;
+            return false;
+        }
+
         Connection con = null;
         try {
             con = ConexionBD.getConexion();
+            if (con == null) {
+                return false; // sin conexión: no se inicia ninguna transacción, no queda nada a medias
+            }
             con.setAutoCommit(false); // INICIA LA TRANSACCIÓN
 
             int idVentaGenerada = 0;
@@ -52,7 +92,7 @@ public class VentaDAO {
 
             // Insertar detalles y actualizar stock
             String sqlConsultarStock
-                    = "SELECT stock FROM productos WHERE id_producto = ?";
+                    = "SELECT stock FROM productos WHERE id_producto = ? FOR UPDATE";
 
             try (
                     PreparedStatement psDetalle = con.prepareStatement(sqlDetalle); PreparedStatement psStock = con.prepareStatement(sqlStock); PreparedStatement psConsultarStock = con.prepareStatement(sqlConsultarStock); PreparedStatement psMovimiento = con.prepareStatement(sqlMovimiento)) {
@@ -71,6 +111,11 @@ public class VentaDAO {
                     }
 
                     int stockPosterior = stockAnterior - item.getCantidad();
+
+                    if (stockPosterior < 0) {
+                        mensajeError = "Stock insuficiente para «" + item.getProductoNombre() + "».";
+                        throw new SQLException("Stock insuficiente (producto " + item.getIdProducto() + ")");
+                    }
 
                     // 2. Registrar detalle de venta
                     psDetalle.setInt(1, idVentaGenerada);
@@ -112,8 +157,7 @@ public class VentaDAO {
                 }
             }
 
-            e.printStackTrace();
-            System.err.println("Error al procesar la venta: " + e.getMessage());
+            util.Log.error("Error al procesar la venta (se hizo rollback)", e);
             return false;
 
         } finally {
