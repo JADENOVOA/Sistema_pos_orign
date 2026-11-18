@@ -152,6 +152,8 @@ public class PnlUsuarios extends JPanel {
                                 "ID_REAL",
                                 "Nombre Completo",
                                 "Usuario",
+                                "Correo electrónico",
+                                "Correo confirmado",
                                 "Rol",
                                 "Estado"
                 };
@@ -244,6 +246,8 @@ public class PnlUsuarios extends JPanel {
                                         u.getIdUsuario(),
                                         u.getNombreCompleto(),
                                         u.getUsuario(),
+                                        u.getEmail() == null ? "" : u.getEmail(),
+                                        u.isEmailVerificado() ? "Sí" : "No",
                                         u.getRol(),
                                         u.getEstado()
                         });
@@ -260,6 +264,7 @@ public class PnlUsuarios extends JPanel {
 
                 JTextField txtNombre = new JTextField();
                 JTextField txtUsuario = new JTextField();
+                JTextField txtEmail = new JTextField();
                 JPasswordField txtPassword = new JPasswordField();
 
                 JComboBox<String> cboRol = new JComboBox<>(
@@ -271,6 +276,7 @@ public class PnlUsuarios extends JPanel {
                 Object[] campos = {
                                 "Nombre completo:", txtNombre,
                                 "Usuario:", txtUsuario,
+                                "Correo electrónico (opcional):", txtEmail,
                                 "Contraseña:", txtPassword,
                                 "Rol:", cboRol,
                                 "Estado:", cboEstado
@@ -304,6 +310,9 @@ public class PnlUsuarios extends JPanel {
                         errorDatos = util.Validador.usuario(usuario);
                 }
                 if (errorDatos == null) {
+                        errorDatos = util.Validador.email(txtEmail.getText());
+                }
+                if (errorDatos == null) {
                         errorDatos = util.Validador.password(password);
                 }
                 if (errorDatos != null) {
@@ -335,6 +344,7 @@ public class PnlUsuarios extends JPanel {
 
                 nuevo.setNombreCompleto(nombre);
                 nuevo.setUsuario(usuario);
+                nuevo.setEmail(txtEmail.getText().trim());
                 nuevo.setPassword(password);
                 nuevo.setRol(cboRol.getSelectedItem().toString());
                 nuevo.setEstado(cboEstado.getSelectedItem().toString());
@@ -382,13 +392,17 @@ public class PnlUsuarios extends JPanel {
 
                 String usuarioActual = modeloTabla.getValueAt(fila, 3).toString();
 
-                String rolActual = modeloTabla.getValueAt(fila, 4).toString();
+                String emailActual = modeloTabla.getValueAt(fila, 4).toString();
 
-                String estadoActual = modeloTabla.getValueAt(fila, 5).toString();
+                String rolActual = modeloTabla.getValueAt(fila, 6).toString();
+
+                String estadoActual = modeloTabla.getValueAt(fila, 7).toString();
 
                 JTextField txtNombre = new JTextField(nombreActual);
 
                 JTextField txtUsuario = new JTextField(usuarioActual);
+
+                JTextField txtEmail = new JTextField(emailActual);
 
                 JPasswordField txtPassword = new JPasswordField();
 
@@ -405,7 +419,8 @@ public class PnlUsuarios extends JPanel {
                 Object[] campos = {
                                 "Nombre completo:", txtNombre,
                                 "Usuario:", txtUsuario,
-                                "Nueva contraseña:", txtPassword,
+                                "Correo electrónico (opcional):", txtEmail,
+                                "Nueva contraseña (opcional):", txtPassword,
                                 "Rol:", cboRol,
                                 "Estado:", cboEstado
                 };
@@ -429,7 +444,8 @@ public class PnlUsuarios extends JPanel {
                 u.setUsuario(
                                 txtUsuario.getText().trim());
 
-                // temporalmente obliga a poner nueva contraseña
+                u.setEmail(txtEmail.getText().trim());
+
                 u.setPassword(
                                 new String(
                                                 txtPassword.getPassword()).trim());
@@ -440,21 +456,15 @@ public class PnlUsuarios extends JPanel {
                 u.setEstado(
                                 cboEstado.getSelectedItem().toString());
 
-                if (u.getPassword().isEmpty()) {
-
-                        JOptionPane.showMessageDialog(
-                                        this,
-                                        "Ingrese la contraseña.");
-
-                        return;
-                }
-
                 String errorDatos = util.Validador.texto(u.getNombreCompleto(), "Nombre completo",
                                 util.Validador.MAX_NOMBRE, true);
                 if (errorDatos == null) {
                         errorDatos = util.Validador.usuario(u.getUsuario());
                 }
                 if (errorDatos == null) {
+                        errorDatos = util.Validador.email(u.getEmail());
+                }
+                if (errorDatos == null && !u.getPassword().isEmpty()) {
                         errorDatos = util.Validador.password(u.getPassword());
                 }
                 if (errorDatos != null) {
@@ -473,7 +483,7 @@ public class PnlUsuarios extends JPanel {
                         return;
                 }
 
-                if (!util.ValidadorPassword.esSegura(u.getPassword())) {
+                if (!u.getPassword().isEmpty() && !util.ValidadorPassword.esSegura(u.getPassword())) {
 
                         JOptionPane.showMessageDialog(
                                         this,
@@ -552,7 +562,7 @@ public class PnlUsuarios extends JPanel {
 
                 String estadoActual = modeloTabla.getValueAt(
                                 fila,
-                                5).toString();
+                                7).toString();
 
                 String nuevoEstado = "Activo".equalsIgnoreCase(
                                 estadoActual)

@@ -53,6 +53,16 @@ public final class Validador {
         return null;
     }
 
+    /** Correo opcional; si se informa, debe tener una forma válida y longitud RFC habitual. */
+    public static String email(String valor) {
+        if (valor == null || valor.isBlank()) return null;
+        String v = valor.trim();
+        if (v.length() > 254 || !v.matches("^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$")) {
+            return "Ingrese un correo electrónico válido (máximo 254 caracteres).";
+        }
+        return null;
+    }
+
     /** Monto en soles: 0 a 99,999.99, máximo 2 decimales, sin signo ni notación científica. */
     public static String dinero(String valor, String campo, boolean permitirCero) {
         String v = valor == null ? "" : valor.trim();

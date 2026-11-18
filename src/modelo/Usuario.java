@@ -7,6 +7,8 @@ public class Usuario {
     private String password;
     private String rol;    // "Administrador" o "Cajero"
     private String estado; // "Activo" o "Inactivo"
+    private String email;
+    private boolean emailVerificado;
 
     public Usuario() {}
 
@@ -32,4 +34,8 @@ public class Usuario {
     public void setRol(String rol) { this.rol = rol; }
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+    public boolean isEmailVerificado() { return emailVerificado; }
+    public void setEmailVerificado(boolean emailVerificado) { this.emailVerificado = emailVerificado; }
 }

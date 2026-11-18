@@ -38,6 +38,7 @@ public final class Config {
         return new File[] {
             new File("bodega.properties"),
             new File(carpetaJar, "bodega.properties"),
+            new File(carpetaJar, ".." + File.separator + "bodega.properties"),
             new File(System.getProperty("user.home"), ".bodega_laperuanita" + File.separator + "bodega.properties")
         };
     }
@@ -67,8 +68,16 @@ public final class Config {
     /** @param claveEnv variable de entorno; @param clave clave en el archivo. */
     public static String get(String claveEnv, String clave, String porDefecto) {
         String v = claveEnv == null ? null : System.getenv(claveEnv);
+        if ((v == null || v.isBlank()) && claveEnv != null && claveEnv.endsWith("_PASSWORD")) {
+            v = BovedaSecretos.obtener(claveEnv);
+        }
         if (v == null || v.isBlank()) v = ARCHIVO.getProperty(clave);
         return (v == null || v.isBlank()) ? porDefecto : v.trim();
+    }
+
+    /** Cifra secretos legacy antes de inicializar la conexión y limpia el archivo externo. */
+    public static void migrarSecretosLegados() throws Exception {
+        BovedaSecretos.migrarConfiguracionLegacy(ARCHIVO, archivoCargado == null ? null : archivoCargado.toPath());
     }
 
     /** Carpeta de datos del sistema (respaldos, logs, línea base de integridad). */

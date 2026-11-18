@@ -2,14 +2,19 @@ package conexion;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import util.Config;
 
 public class ConexionBD {
 
     private static final String URL_BASE = Config.get(
             "BODEGA_DB_URL", "db.url", "jdbc:postgresql://localhost:5432/BODEGA_LAPERUANITA");
-    private static final String SSLMODE = Config.get("BODEGA_DB_SSLMODE", "db.sslmode", "require");
+    // La instalación local de PostgreSQL no tiene SSL habilitado. Las instalaciones
+    // que sí usan TLS pueden sobrescribir este valor con BODEGA_DB_SSLMODE o db.sslmode.
+    private static final String SSLMODE = Config.get("BODEGA_DB_SSLMODE", "db.sslmode", "disable");
 
     private static final String ADMIN_USER = Config.get("BODEGA_DB_ADMIN_USER", "db.admin.user", "postgres");
     private static final String ADMIN_PASS = Config.get("BODEGA_DB_ADMIN_PASSWORD", "db.admin.password", null);
@@ -20,6 +25,53 @@ public class ConexionBD {
     public static String getUrl() {
         if (URL_BASE.toLowerCase().contains("sslmode=") || URL_BASE.toLowerCase().contains("ssl=")) return URL_BASE;
         return URL_BASE + (URL_BASE.contains("?") ? "&" : "?") + "sslmode=" + SSLMODE;
+    }
+
+    /** URL a la base de mantenimiento para preparar la base del POS si todavía no existe. */
+    private static String getUrlMantenimiento() {
+        int query = URL_BASE.indexOf('?');
+        String urlSinParametros = query < 0 ? URL_BASE : URL_BASE.substring(0, query);
+        String parametros = query < 0 ? "" : URL_BASE.substring(query);
+        int ultimaBarra = urlSinParametros.lastIndexOf('/');
+        if (ultimaBarra < "jdbc:postgresql://".length()) {
+            throw new IllegalStateException("La URL de PostgreSQL no contiene un nombre de base de datos válido.");
+        }
+        String url = urlSinParametros.substring(0, ultimaBarra + 1) + "postgres" + parametros;
+        if (!parametros.toLowerCase(java.util.Locale.ROOT).contains("sslmode=")
+                && !parametros.toLowerCase(java.util.Locale.ROOT).contains("ssl=")) {
+            url += (url.contains("?") ? "&" : "?") + "sslmode=" + SSLMODE;
+        }
+        return url;
+    }
+
+    /** Crea la base solo si falta. Requiere bootstrap y una cuenta PostgreSQL con CREATEDB. */
+    public static void asegurarBaseDatos() {
+        String nombre = getNombreBD();
+        if (!nombre.matches("[A-Za-z0-9_]{1,63}")) {
+            throw new IllegalStateException("El nombre de la base debe tener de 1 a 63 letras, números o guiones bajos.");
+        }
+        try {
+            Class.forName("org.postgresql.Driver");
+            try (Connection conexion = DriverManager.getConnection(getUrlMantenimiento(), ADMIN_USER, ADMIN_PASS)) {
+                boolean existe;
+                try (PreparedStatement consulta = conexion.prepareStatement(
+                        "SELECT 1 FROM pg_database WHERE datname = ?")) {
+                    consulta.setString(1, nombre);
+                    try (ResultSet rs = consulta.executeQuery()) { existe = rs.next(); }
+                }
+                if (existe) return;
+                try (Statement sentencia = conexion.createStatement()) {
+                    sentencia.execute("CREATE DATABASE \"" + nombre + "\"");
+                }
+                util.Log.info("Base de datos creada automáticamente: " + nombre);
+            }
+        } catch (SQLException e) {
+            if ("42P04".equals(e.getSQLState())) return; // Otra instancia la creó al mismo tiempo.
+            util.Log.error("No se pudo crear o comprobar la base de datos " + nombre, e);
+            throw new IllegalStateException("No se pudo comprobar o crear la base de datos. Verifique PostgreSQL, BODEGA_DB_ADMIN_USER/BODEGA_DB_ADMIN_PASSWORD y el permiso CREATEDB de esa cuenta.", e);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("No se encontró el controlador de PostgreSQL.", e);
+        }
     }
 
     public static String getSslMode() { return SSLMODE; }

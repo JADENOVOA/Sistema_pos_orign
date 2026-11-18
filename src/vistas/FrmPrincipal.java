@@ -130,6 +130,7 @@ public class FrmPrincipal extends javax.swing.JFrame {
             }
             AuditoriaDAO.registrar(usuarioLogueado, "Autenticación", "CIERRE_SESION_INACTIVIDAD",
                     InactividadSesion.MINUTOS + " min sin actividad");
+            revocarSesionRecordada();
             JOptionPane.showMessageDialog(null,
                     "Su sesión se cerró por " + InactividadSesion.MINUTOS
                             + " minutos de inactividad.",
@@ -568,6 +569,7 @@ public class FrmPrincipal extends javax.swing.JFrame {
                 "¿Está seguro de cerrar sesión?", "Salir", JOptionPane.YES_NO_OPTION);
         if (opc == JOptionPane.YES_OPTION) {
             AuditoriaDAO.registrar(usuarioLogueado, "Autenticación", "CIERRE_SESION", "Cierre manual");
+            revocarSesionRecordada();
             new FrmLogin().setVisible(true);
             this.dispose();
         }
@@ -1009,7 +1011,14 @@ public class FrmPrincipal extends javax.swing.JFrame {
     private void cerrarSesionForzada() {
         AuditoriaDAO.registrar(usuarioLogueado, "Autenticación", "CIERRE_SESION_CUENTA_DESACTIVADA",
                 "La cuenta fue desactivada con la sesión abierta");
+        revocarSesionRecordada();
         cerrarSesionPorMensaje("Su cuenta fue desactivada por un administrador.\nSe cerró su sesión.");
+    }
+
+    private void revocarSesionRecordada() {
+        String token = util.SesionPersistente.leer();
+        new UsuarioDAO().revocarSesionRecordada(token);
+        util.SesionPersistente.eliminar();
     }
 
     private void cerrarSesionPorMensaje(String mensaje) {
@@ -1017,6 +1026,7 @@ public class FrmPrincipal extends javax.swing.JFrame {
             return;
         }
         sesionCerrada = true;
+        revocarSesionRecordada();
         for (java.awt.Window w : java.awt.Window.getWindows()) {
             if (w != this && w.isDisplayable()) {
                 w.dispose();

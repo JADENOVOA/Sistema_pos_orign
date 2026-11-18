@@ -19,6 +19,7 @@ public class FrmLogin extends JFrame {
 
         private JTextField txtUsuario;
         private JPasswordField txtPassword;
+        private JCheckBox chkRecordarme;
         private JButton btnIngresar;
         private Timer animacionBoton;
 
@@ -218,6 +219,25 @@ public class FrmLogin extends JFrame {
                 gbc.insets = new Insets(0, 0, 20, 0);
                 pnlFormulario.add(pnlCampoPassword, gbc);
 
+                JPanel pnlOpciones = new JPanel(new BorderLayout());
+                pnlOpciones.setOpaque(false);
+                chkRecordarme = new JCheckBox("Recordarme en este equipo");
+                chkRecordarme.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+                chkRecordarme.setOpaque(false);
+                chkRecordarme.setForeground(TEXTO);
+                JButton btnOlvide = new JButton("¿Olvidaste tu contraseña?");
+                btnOlvide.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+                btnOlvide.setForeground(VERDE_OSCURO);
+                btnOlvide.setBorderPainted(false);
+                btnOlvide.setContentAreaFilled(false);
+                btnOlvide.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                btnOlvide.addActionListener(e -> iniciarRecuperacion());
+                pnlOpciones.add(chkRecordarme, BorderLayout.WEST);
+                pnlOpciones.add(btnOlvide, BorderLayout.EAST);
+                gbc.gridy = 6;
+                gbc.insets = new Insets(0, 0, 16, 0);
+                pnlFormulario.add(pnlOpciones, gbc);
+
                 // Botón ingresar
                 btnIngresar = new JButton("INICIAR SESIÓN");
 
@@ -233,7 +253,7 @@ public class FrmLogin extends JFrame {
                 btnIngresar.setPreferredSize(
                                 new Dimension(280, 45));
 
-                gbc.gridy = 6;
+                gbc.gridy = 7;
                 gbc.insets = new Insets(0, 0, 8, 0);
                 pnlFormulario.add(btnIngresar, gbc);
 
@@ -246,7 +266,7 @@ public class FrmLogin extends JFrame {
                 lblSeguridad.setHorizontalAlignment(
                                 SwingConstants.CENTER);
 
-                gbc.gridy = 7;
+                gbc.gridy = 8;
                 gbc.insets = new Insets(8, 0, 0, 0);
                 pnlFormulario.add(lblSeguridad, gbc);
 
@@ -446,6 +466,24 @@ public class FrmLogin extends JFrame {
 
                                 case OK:
                                         Usuario u = r.getUsuario();
+                                        if (chkRecordarme.isSelected()) {
+                                                String token = dao.crearSesionRecordada(u.getIdUsuario());
+                                                try {
+                                                        if (token == null) throw new IllegalStateException("No se pudo registrar la sesión.");
+                                                        util.SesionPersistente.guardar(token);
+                                                } catch (Exception persistencia) {
+                                                        dao.revocarSesionRecordada(token);
+                                                        util.SesionPersistente.eliminar();
+                                                        util.Log.error("No se pudo guardar la sesión recordada", persistencia);
+                                                        JOptionPane.showMessageDialog(this,
+                                                                        "La sesión inició, pero no se pudo activar «Recordarme».",
+                                                                        "Sesión iniciada", JOptionPane.WARNING_MESSAGE);
+                                                }
+                                        } else {
+                                                String tokenPrevio = util.SesionPersistente.leer();
+                                                dao.revocarSesionRecordada(tokenPrevio);
+                                                util.SesionPersistente.eliminar();
+                                        }
                                         FrmPrincipal principal = new FrmPrincipal(u);
                                         dispose();
                                         principal.setVisible(true);
@@ -524,6 +562,63 @@ public class FrmLogin extends JFrame {
                 }
         }
 
+        private void iniciarRecuperacion() {
+                String email = JOptionPane.showInputDialog(this, "Correo registrado:",
+                                "Recuperar contraseña", JOptionPane.QUESTION_MESSAGE);
+                if (email == null) return;
+                if (util.Validador.email(email) != null || email.isBlank()) {
+                        JOptionPane.showMessageDialog(this, "Ingrese un correo válido.",
+                                        "Dato no válido", JOptionPane.WARNING_MESSAGE);
+                        return;
+                }
+                UsuarioDAO dao = new UsuarioDAO();
+                UsuarioDAO.ResultadoRecuperacion resultado = dao.solicitarRecuperacion(email);
+                if (resultado == UsuarioDAO.ResultadoRecuperacion.ERROR) {
+                        JOptionPane.showMessageDialog(this,
+                                        "No se pudo procesar la solicitud por un problema de conexión.",
+                                        "Recuperación no disponible", JOptionPane.ERROR_MESSAGE);
+                        return;
+                }
+                JOptionPane.showMessageDialog(this,
+                                "La solicitud fue procesada. Si el correo pertenece a una cuenta activa y el servicio de correo está configurado, recibirás un código que vence en 15 minutos.",
+                                "Revisa tu correo", JOptionPane.INFORMATION_MESSAGE);
+                JTextField txtCodigo = new JTextField();
+                JPasswordField txtNueva = new JPasswordField();
+                JPasswordField txtConfirmar = new JPasswordField();
+                Object[] campos = {"Código recibido:", txtCodigo, "Nueva contraseña:", txtNueva,
+                                "Confirmar contraseña:", txtConfirmar};
+                int opcion = JOptionPane.showConfirmDialog(this, campos,
+                                "Restablecer contraseña", JOptionPane.OK_CANCEL_OPTION);
+                if (opcion != JOptionPane.OK_OPTION) return;
+                String nueva = new String(txtNueva.getPassword());
+                String confirmar = new String(txtConfirmar.getPassword());
+                if (!nueva.equals(confirmar)) {
+                        JOptionPane.showMessageDialog(this, "Las contraseñas no coinciden.",
+                                        "Dato no válido", JOptionPane.WARNING_MESSAGE);
+                        return;
+                }
+                if (!util.ValidadorPassword.esSegura(nueva)) {
+                        JOptionPane.showMessageDialog(this, util.ValidadorPassword.REQUISITOS,
+                                        "Contraseña no segura", JOptionPane.WARNING_MESSAGE);
+                        return;
+                }
+                if (util.Validador.password(nueva) != null) {
+                        JOptionPane.showMessageDialog(this, util.Validador.password(nueva),
+                                        "Contraseña no válida", JOptionPane.WARNING_MESSAGE);
+                        return;
+                }
+                if (dao.restablecerPassword(email, txtCodigo.getText().trim(), nueva)) {
+                        util.SesionPersistente.eliminar();
+                        JOptionPane.showMessageDialog(this,
+                                        "La contraseña se actualizó. Inicia sesión con la nueva contraseña.",
+                                        "Contraseña actualizada", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                        JOptionPane.showMessageDialog(this,
+                                        "No se pudo restablecer. Verifica el código, que no haya vencido y vuelve a solicitar otro si es necesario.",
+                                        "Código no válido", JOptionPane.ERROR_MESSAGE);
+                }
+        }
+
         /** Cualquier error no controlado se registra en el log y se muestra un mensaje genérico. */
         private static void instalarManejadorDeErrores() {
                 Thread.UncaughtExceptionHandler h = (hilo, error) -> {
@@ -550,8 +645,19 @@ public class FrmLogin extends JFrame {
 
                 EventQueue.invokeLater(() -> {
                         try {
+                                util.Config.migrarSecretosLegados();
                                 JPAUtil.inicializarEsquema();
                                 util.IntegridadArchivos.verificarAlIniciar();
+                                String token = util.SesionPersistente.leer();
+                                if (token != null) {
+                                        Usuario recordado = new UsuarioDAO().autenticarSesionRecordada(token);
+                                        if (recordado != null) {
+                                                new FrmPrincipal(recordado).setVisible(true);
+                                                return;
+                                        }
+                                        new UsuarioDAO().revocarSesionRecordada(token);
+                                        util.SesionPersistente.eliminar();
+                                }
                                 new FrmLogin().setVisible(true);
                         } catch (Exception ex) {
                                 // El detalle técnico va al log interno; en pantalla solo un mensaje genérico
@@ -560,6 +666,10 @@ public class FrmLogin extends JFrame {
                                 String pista = causa.contains("ssl")
                                                 ? "\n\nEl servidor no acepta conexión cifrada (SSL). Active SSL en PostgreSQL "
                                                                 + "(ver docs/ACTIVAR_SSL_POSTGRESQL.md)."
+                                                : causa.contains("bodega_db_admin_password")
+                                                                ? "\n\nConfigure la cuenta administradora PostgreSQL en BODEGA_DB_ADMIN_USER y BODEGA_DB_ADMIN_PASSWORD; esa cuenta necesita permiso CREATEDB para crear la base inicial."
+                                                                : causa.contains("permiso createdb")
+                                                                                ? "\n\nLa cuenta PostgreSQL configurada necesita permiso CREATEDB para crear la base inicial."
                                                 : "";
                                 JOptionPane.showMessageDialog(
                                                 null,

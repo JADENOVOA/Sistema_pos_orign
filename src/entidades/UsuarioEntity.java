@@ -13,6 +13,10 @@ public class UsuarioEntity {
     private String nombreCompleto;
     @Column(nullable = false, length = 60)
     private String usuario;
+    @Column(length = 254)
+    private String email;
+    @Column(name = "email_verificado", nullable = false, columnDefinition = "boolean not null default false")
+    private Boolean emailVerificado = false;
     @Column(nullable = false, length = 255)
     private String password;
     @Column(nullable = false, columnDefinition = "rol_usuario")
