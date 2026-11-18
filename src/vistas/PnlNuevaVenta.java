@@ -630,6 +630,13 @@ public class PnlNuevaVenta extends JPanel {
         actualizarTotales();
     }
 
+    /** Redondea a 2 decimales (HALF_UP) para comparar dinero sin errores de coma flotante. */
+    private static double redondear2(double valor) {
+        return new java.math.BigDecimal(Double.toString(valor))
+                .setScale(2, java.math.RoundingMode.HALF_UP)
+                .doubleValue();
+    }
+
     private void actualizarTotales() {
 
         double total = 0.0;
@@ -648,9 +655,11 @@ public class PnlNuevaVenta extends JPanel {
             totalItems += cant;
         }
 
-        totalCalculado = total;
-        subtotalCalculado = totalCalculado / 1.18;
-        igvCalculado = totalCalculado - subtotalCalculado;
+        // Se redondea a 2 decimales para evitar errores de coma flotante
+        // (ej.: 7.90 + 2.00 + 4.20 = 14.100000000000001)
+        totalCalculado = redondear2(total);
+        subtotalCalculado = redondear2(totalCalculado / 1.18);
+        igvCalculado = redondear2(totalCalculado - subtotalCalculado);
 
         lblItemsCount.setText(totalItems + " items");
 
@@ -668,7 +677,7 @@ public class PnlNuevaVenta extends JPanel {
 
         if ("Billetera Digital".equals(metodoPagoSeleccionado)) {
             txtMontoRecibido.setText(
-                    String.format("%.2f", totalCalculado));
+                    String.format(java.util.Locale.US, "%.2f", totalCalculado));
         }
 
         calcularVuelto();
@@ -744,8 +753,6 @@ public class PnlNuevaVenta extends JPanel {
             txtMontoRecibido.setEnabled(true);
             txtMontoRecibido.setText("");
 
-            lblVuelto.setText("S/. 0.00");
-
         } else {
 
             btnBilletera.setBackground(COLOR_VERDE);
@@ -754,22 +761,19 @@ public class PnlNuevaVenta extends JPanel {
             btnEfectivo.setBackground(new Color(241, 245, 249));
             btnEfectivo.setForeground(new Color(51, 65, 85));
 
+            // Billetera: el monto viene por defecto igual al total, pero es editable
+            txtMontoRecibido.setEnabled(true);
             txtMontoRecibido.setText(
-                    String.format("%.2f", totalCalculado));
-
-            txtMontoRecibido.setEnabled(false);
-            lblVuelto.setText("S/. 0.00");
+                    String.format(java.util.Locale.US, "%.2f", totalCalculado));
         }
+
+        calcularVuelto();
 
         btnEfectivo.repaint();
         btnBilletera.repaint();
     }
 
     private void calcularVuelto() {
-
-        if ("Billetera Digital".equals(metodoPagoSeleccionado)) {
-            return;
-        }
 
         try {
 
@@ -778,11 +782,12 @@ public class PnlNuevaVenta extends JPanel {
 
             if (texto.isEmpty()) {
                 lblVuelto.setText("S/. 0.00");
+                lblVuelto.setForeground(COLOR_VERDE_OSCURO);
                 return;
             }
 
-            double recibido = Double.parseDouble(texto);
-            double vuelto = recibido - totalCalculado;
+            double recibido = redondear2(Double.parseDouble(texto));
+            double vuelto = redondear2(recibido - totalCalculado);
 
             if (vuelto >= 0) {
 
@@ -855,9 +860,10 @@ public class PnlNuevaVenta extends JPanel {
 
         try {
 
-            recibido = util.Validador.aDouble(
-                    txtMontoRecibido.getText());
+            recibido = redondear2(util.Validador.aDouble(
+                    txtMontoRecibido.getText()));
 
+            // Solo es insuficiente si es MENOR al total (igual o mayor sí se cobra)
             if (recibido < totalCalculado) {
 
                 JOptionPane.showMessageDialog(
@@ -869,7 +875,7 @@ public class PnlNuevaVenta extends JPanel {
                 return;
             }
 
-            vuelto = recibido - totalCalculado;
+            vuelto = redondear2(recibido - totalCalculado);
 
         } catch (NumberFormatException e) {
 

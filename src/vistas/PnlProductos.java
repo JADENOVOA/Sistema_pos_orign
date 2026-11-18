@@ -136,7 +136,7 @@ public class PnlProductos extends JPanel {
         JPanel pnlCosto = new JPanel(new BorderLayout(0, 2));
         pnlCosto.setBackground(Color.WHITE);
         pnlCosto.add(crearLabel("Precio Costo (S/.):"), BorderLayout.NORTH);
-        txtPrecioCosto = new JTextField("0.00");
+        txtPrecioCosto = new JTextField();
         txtPrecioCosto.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         pnlCosto.add(txtPrecioCosto, BorderLayout.CENTER);
 
@@ -160,14 +160,14 @@ public class PnlProductos extends JPanel {
         JPanel pnlStk = new JPanel(new BorderLayout(0, 2));
         pnlStk.setBackground(Color.WHITE);
         pnlStk.add(crearLabel("Stock Inicial: *"), BorderLayout.NORTH);
-        txtStock = new JTextField("0");
+        txtStock = new JTextField();
         txtStock.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         pnlStk.add(txtStock, BorderLayout.CENTER);
 
         JPanel pnlStkMin = new JPanel(new BorderLayout(0, 2));
         pnlStkMin.setBackground(Color.WHITE);
         pnlStkMin.add(crearLabel("Stock Mínimo Alerta:"), BorderLayout.NORTH);
-        txtStockMinimo = new JTextField("5");
+        txtStockMinimo = new JTextField();
         txtStockMinimo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         pnlStkMin.add(txtStockMinimo, BorderLayout.CENTER);
 
@@ -444,10 +444,10 @@ public class PnlProductos extends JPanel {
         txtId.setText("");
         txtNombre.setText("");
         cboCategoria.setSelectedIndex(0);
-        txtPrecioCosto.setText("0.00");
+        txtPrecioCosto.setText("");
         txtPrecioVenta.setText("");
-        txtStock.setText("0");
-        txtStockMinimo.setText("5");
+        txtStock.setText("");
+        txtStockMinimo.setText("");
         cboUnidadMedida.setSelectedIndex(0);
 
         if (tblProductos != null) {
@@ -549,6 +549,21 @@ public class PnlProductos extends JPanel {
     }
 
     private boolean validarCampos() {
+        // Si falta cualquier campo, se avisa con un único mensaje general
+        if (txtNombre.getText().trim().isEmpty()
+                || txtPrecioCosto.getText().trim().isEmpty()
+                || txtPrecioVenta.getText().trim().isEmpty()
+                || txtStock.getText().trim().isEmpty()
+                || txtStockMinimo.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Se deben completar todos los campos",
+                    "Dato no válido", JOptionPane.WARNING_MESSAGE);
+            if (txtNombre.getText().trim().isEmpty()) txtNombre.requestFocus();
+            else if (txtPrecioCosto.getText().trim().isEmpty()) txtPrecioCosto.requestFocus();
+            else if (txtPrecioVenta.getText().trim().isEmpty()) txtPrecioVenta.requestFocus();
+            else if (txtStock.getText().trim().isEmpty()) txtStock.requestFocus();
+            else txtStockMinimo.requestFocus();
+            return false;
+        }
         String error = util.Validador.texto(txtNombre.getText(), "Nombre del producto", util.Validador.MAX_NOMBRE, true);
         if (error != null) {
             JOptionPane.showMessageDialog(this, error, "Dato no válido", JOptionPane.WARNING_MESSAGE);
